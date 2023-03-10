@@ -29,7 +29,7 @@ typedef struct idNode{
 	struct idNode *next;
 } IDTABLE;
 
-//´Ê·¨·ÖÎöDFA×ª»»±í
+//è¯æ³•åˆ†æDFAè½¬æ¢è¡¨
 static int LexTable[6][8]=
    {{   1, 201, 204,   2,   3,   4,   5, 205},
 	{ 101, 101, 101, 101, 101, 101, 101, 101},
@@ -39,9 +39,9 @@ static int LexTable[6][8]=
 	{ 105, 105, 105, 105, 105,   5,   5, 105}};
 
 
-//ÓÃÓÚ´Ê·¨·ÖÎöÊä³ö£¬¼°Óï·¨·ÖÎö
+//ç”¨äºè¯æ³•åˆ†æè¾“å‡ºï¼ŒåŠè¯­æ³•åˆ†æ
 #define ERR			-1
-#define SYN_NUM		1		// intÕûÊı
+#define SYN_NUM		1		// intæ•´æ•°
 #define SYN_ID		2		// id
 #define SYN_LT		11		// <
 #define SYN_GT		12		// >
@@ -72,7 +72,7 @@ static int LexTable[6][8]=
 #define SYN_WHILE	60		// while
 #define SYN_SHOW	61		// show
 
-//ÓÃÓÚ·ûºÅ±íÖĞÀàĞÍ
-#define ID_FUN		1		// º¯ÊıÀàĞÍ
-#define ID_INT		2		// intÀàĞÍ
-#define ID_CHAR		3		// charÀàĞÍ
+//ç”¨äºç¬¦å·è¡¨ä¸­ç±»å‹
+#define ID_FUN		1		// å‡½æ•°ç±»å‹
+#define ID_INT		2		// intç±»å‹
+#define ID_CHAR		3		// charç±»å‹

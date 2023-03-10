@@ -7,10 +7,12 @@ union AttributeVal
     int false_lable;    // false lable pointer
     int begin_lable;    // begin lable pointer
     int next_lable;     // next lable pointer
-    IDTABLE *exp_ptr;    // id pointer, or temporary variable(including immediate number)
+    IDTABLE *id_ptr;    // id pointer
+    EXPVAL *tmp_ptr;    // temporary variable pointer
+    EXPVAL imm;         // immediate number value
 };
 
-enum AttributeType{TRUE_LABLE, FALSE_LABLE, BEGIN_LABLE, NEXT_LABLE, EXP_PTR};
+enum AttributeType{TRUE_LABLE, FALSE_LABLE, BEGIN_LABLE, NEXT_LABLE, ID_PTR, TMP_PTR, IMM_VAL};
 
 typedef struct AttributeNode
 {
@@ -26,20 +28,20 @@ extern AttributeNode *installAttribute(AttributeNode *attribute, AttributeNode *
 enum BinaryOperator{ADD, SUB, MUL, DIV, AND, OR, GT, GE, LT, LE, EQ};
 typedef struct BinaryOperationInstruction
 {
-    IDTABLE *x, *y, *z;
-    union BinaryOperator op;
+    AttributeNode *x, *y, *z;
+    enum BinaryOperator op;
 }BinInstr;
 
 enum UnaryOperator{NEG, NOT};
 typedef struct UnaryOperationInstruction
 {
-    IDTABLE *x, *y;
-    union UnaryOperator op;
+    AttributeNode *x, *y;
+    enum UnaryOperator op;
 }UnaInstr;
 
 typedef struct DuplicationInstruction
 {
-    IDTABLE *x, *y;
+    AttributeNode *x, *y;
 }DupInstr;
 
 typedef struct GotoInstruction
@@ -49,7 +51,7 @@ typedef struct GotoInstruction
 
 typedef struct ConditionalGotoInstruction
 {
-    IDTABLE *condition;
+    AttributeNode *condition;
     int lable;
 }ConGotoInstr;
 
@@ -62,9 +64,13 @@ union InstructionVal
     ConGotoInstr conGotoInstr;
 };
 
-enum InstructionType{BIN, UNA, DUP, GOTO, CGOTO}
+enum InstructionType{BIN, UNA, DUP, GOTO, CGOTO};
 typedef struct Instruction
 {
-    InstructionType type;
-    union InstructionVal;
+    enum InstructionType type;
+    union InstructionVal val;
 }Instr;
+
+#define MAX_CODE 1024
+Instr code[MAX_CODE];
+int pc;

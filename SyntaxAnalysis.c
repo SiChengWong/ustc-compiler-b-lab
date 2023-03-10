@@ -1,6 +1,7 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "constvar.h"
+#include "codeGeneration.h"
 
 extern TERMINAL nextToken();
 extern void renewLex();
@@ -661,102 +662,45 @@ static EXPVAL Prod_TE()
 	return(val2);
 }
 
-static EXPVAL Prod_TE1(EXPVAL val1)
+static AttributeNode* Prod_TE1(AttributeNode *pre_attr)
 {
-	EXPVAL val2,val;
-	int i1,i2;
-	char c1,c2;
-	if (lookahead.token==SYN_MUL)
-	{
-		#if defined(AnaTypeSyn)
-		printf("SYN: TE1-->*F TE1\n");
-		#endif
-		match(SYN_MUL);
-		val2=Prod_F();
-		if (run_status==1)
-			if (val1.type==ID_INT || val2.type==ID_INT)
-			{
-				val.type=ID_INT;
-				i1=cast2int(val1);
-				i2=cast2int(val2);
-				val.val.intval=i1*i2;
-			}
-			else
-			{
-				val.type=ID_CHAR;
-				c1=cast2char(val1);
-				c2=cast2char(val2);
-				val.val.charval=c1*c2;
-			}
-		val=Prod_TE1(val);
-	}
-	else if (lookahead.token==SYN_DIV)
-	{
-		#if defined(AnaTypeSyn)
-		printf("SYN: TE1-->/F TE1\n");
-		#endif
-		match(SYN_DIV);
-		val2=Prod_F();
-		if (run_status==1)
-			if (val1.type==ID_INT || val2.type==ID_INT)
-			{
-				val.type=ID_INT;
-				i1=cast2int(val1);
-				i2=cast2int(val2);
-				val.val.intval=i1/i2;
-			}
-			else
-			{
-				val.type=ID_CHAR;
-				c1=cast2char(val1);
-				c2=cast2char(val2);
-				val.val.charval=c1/c2;
-			}
-		val=Prod_TE1(val);
-	}
-	else
-	{
-		#if defined(AnaTypeSyn)
-		printf("SYN: TE1--> \n");
-		#endif
-		val=val1;
-	}
-	return(val);
+	
 }
 
-static EXPVAL Prod_F()
+static AttributeNode* Prod_F()
 {
-	EXPVAL val;
-	static IDTABLE *p;
-	if (lookahead.token==SYN_NUM)
+	AttributeNode *attr;
+	if (lookahead.token == SYN_NUM)
 	{
-		#if defined(AnaTypeSyn)
-		printf("SYN: F-->num\n");
-		#endif
+		// F-->num
 		match(SYN_NUM);
-		val.type=ID_INT;
-		val.val.intval=curtoken_num;
+		attr = (AttributeNode*)malloc(sizeof(AttributeNode));
+		attr->type = IMM_VAL;
+		attr->val.imm.type = ID_INT;
+		attr->val.imm.val.intval = curtoken_num;
+		attr->next = NULL;
 	}
-	else if (lookahead.token==SYN_ID)
+	else if (lookahead.token == SYN_ID)
 	{
-		#if defined(AnaTypeSyn)
-		printf("SYN: F-->id\n");
-		#endif
+		// F-->id
 		match(SYN_ID);
-		p=LookupID();
-		val.type=p->type;
-		val.val=p->val;
+		IDTABLE *p = LookupID();
+		attr = (AttributeNode*)malloc(sizeof(AttributeNode));
+		attr->type = ID_PTR;
+		attr->val.id_ptr = p;
+		attr->next = NULL;
 	}
-	else if (lookahead.token==SYN_PAREN_L)
+	else if (lookahead.token == SYN_PAREN_L)
 	{
-		#if defined(AnaTypeSyn)
-		printf("SYN: F-->(B)\n");
-		#endif
+		// F-->(E)
 		match(SYN_PAREN_L);
-		val=Prod_E();
+		attr = Prod_E();
 		match(SYN_PAREN_R);
 	}
 	else
 		FreeExit();
-	return(val);
+	return attr;
 }
+
+
+

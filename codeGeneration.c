@@ -16,7 +16,7 @@ AttributeNode *installAttribute(AttributeNode *attribute, AttributeNode *head){
         head =  attribute;
     else
     {
-        AttributeNode *p = lookupAttribute(head, attribute.type);
+        AttributeNode *p = lookupAttribute(head, attribute->type);
         if (p == NULL)
             p->next = attribute;    // no such attribute, add it
         else
