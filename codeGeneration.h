@@ -72,5 +72,5 @@ typedef struct Instruction
 }Instr;
 
 #define MAX_CODE 1024
-Instr code[MAX_CODE];
-int pc;
+Instr code[MAX_CODE];       // code stack
+int pc;                     // program counter

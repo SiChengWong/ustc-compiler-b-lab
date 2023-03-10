@@ -23,11 +23,11 @@ static int Prod_B1(int bval);
 static int Prod_TB();
 static int Prod_TB1(int bval);
 static int Prod_FB();
-static EXPVAL Prod_E();
-static EXPVAL Prod_E1(EXPVAL val);
-static EXPVAL Prod_TE();
-static EXPVAL Prod_TE1(EXPVAL val);
-static EXPVAL Prod_F();
+static AttributeNode* Prod_E();
+static AttributeNode* Prod_E1(AttributeNode *pre_attr);
+static AttributeNode* Prod_TE();
+static AttributeNode* Prod_TE1(AttributeNode *pre_attr);
+static AttributeNode* Prod_F();
 
 extern FILE *sFile;
 static TERMINAL lookahead;
@@ -35,6 +35,7 @@ static int curtoken_num;
 static char curtoken_str[MAXTOKENLEN];
 static IDTABLE *IDTHead=NULL;
 static int run_status=1;	//0；程序不执行；1:程序正常执行；2:跳过当前结构后继续执行
+static int pc = 0;			// initialize program counter
 
 void SyntaxAnalysis()
 {
@@ -577,94 +578,110 @@ static int Prod_FB()
 	}
 }
 
-static EXPVAL Prod_E()
+static AttributeNode* Prod_E()
 {
-	EXPVAL val1,val2;
-	#if defined(AnaTypeSyn)
-	printf("SYN: E-->TE E1\n");
-	#endif
-	val1=Prod_TE();
-	val2=Prod_E1(val1);
-	return(val2);
+	// E-->TE E1
+	AttributeNode *TE_attr = Prod_TE();
+	AttributeNode *E1_attr = Prod_E1(TE_attr)
+	return E1_attr;
 }
 
-static EXPVAL Prod_E1(EXPVAL val1)
+static AttributeNode* Prod_E1(AttributeNode *pre_attr)
 {
-	EXPVAL val2,val;
-	int i1,i2;
-	char c1,c2;
-	if (lookahead.token==SYN_ADD)
+	AttributeNode *attr;
+	if (lookahead.token == SYN_ADD)
 	{
-		#if defined(AnaTypeSyn)
-		printf("SYN: E1-->+TE E1\n");
-		#endif
+		// E1-->+TE E1
 		match(SYN_ADD);
-		val2=Prod_TE();
-		if (run_status==1)
-			if (val1.type==ID_INT || val2.type==ID_INT)
-			{
-				val.type=ID_INT;
-				i1=cast2int(val1);
-				i2=cast2int(val2);
-				val.val.intval=i1+i2;
-			}
-			else
-			{
-				val.type=ID_CHAR;
-				c1=cast2char(val1);
-				c2=cast2char(val2);
-				val.val.charval=c1+c2;
-			}
-		val=Prod_E1(val);
+		AttributeNode *TE_attr = Prod_TE();
+		AttributeNode *tmp = (AttributeNode*)malloc(sizeof(AttributeNode));
+		tmp->type = TMP_PTR;
+
+		code[pc].type = BIN;
+		code[pc].val.binInstr.x = tmp;
+		code[pc].val.binInstr.y = pre_attr;
+		code[pc].val.binInstr.z = TE_attr;
+		code[pc].val.binInstr.op = ADD;
+		pc++;
+
+		attr = Prod_E1(tmp);
 	}
-	else if (lookahead.token==SYN_SUB)
+	if (lookahead.token == SYN_SUB)
 	{
-		#if defined(AnaTypeSyn)
-		printf("SYN: E1-->-TE E1\n");
-		#endif
+		// E1-->-TE E1
 		match(SYN_SUB);
-		val2=Prod_TE();
-		if (run_status==1)
-			if (val1.type==ID_INT || val2.type==ID_INT)
-			{
-				val.type=ID_INT;
-				i1=cast2int(val1);
-				i2=cast2int(val2);
-				val.val.intval=i1-i2;
-			}
-			else
-			{
-				val.type=ID_CHAR;
-				c1=cast2char(val1);
-				c2=cast2char(val2);
-				val.val.charval=c1-c2;
-			}
-		val=Prod_E1(val);
+		AttributeNode *TE_attr = Prod_TE();
+		AttributeNode *tmp = (AttributeNode*)malloc(sizeof(AttributeNode));
+		tmp->type = TMP_PTR;
+
+		code[pc].type = BIN;
+		code[pc].val.binInstr.x = tmp;
+		code[pc].val.binInstr.y = pre_attr;
+		code[pc].val.binInstr.z = TE_attr;
+		code[pc].val.binInstr.op = SUB;
+		pc++;
+
+		attr = Prod_E1(tmp);
 	}
 	else
 	{
-		#if defined(AnaTypeSyn)
-		printf("SYN: E1--> \n");
-		#endif
-		val=val1;
+		// E1-->
+		attr = pre_attr;
 	}
-	return(val);
+	return attr;
 }
 
-static EXPVAL Prod_TE()
+static AttributeNode* Prod_TE()
 {
-	EXPVAL val1,val2;
-	#if defined(AnaTypeSyn)
-	printf("SYN: TE-->F TE1\n");
-	#endif
-	val1=Prod_F();
-	val2=Prod_TE1(val1);
-	return(val2);
+	// TE-->F TE1
+	AttributeNode *F_attr = Prod_F();
+	AttributeNode *TE1_attr = Prod_TE1(F_attr);
+	return TE1_attr;
 }
 
 static AttributeNode* Prod_TE1(AttributeNode *pre_attr)
 {
-	
+	AttributeNode *attr;
+	if (lookahead.token == SYN_MUL)
+	{
+		// TE1-->*F TE1
+		match(SYN_MUL);
+		AttributeNode *F_attr = Prod_F();
+		AttributeNode *tmp = (AttributeNode*)malloc(sizeof(AttributeNode));
+		tmp->type = TMP_PTR;
+
+		code[pc].type = BIN;
+		code[pc].val.binInstr.x = tmp;
+		code[pc].val.binInstr.y = pre_attr;
+		code[pc].val.binInstr.z = F_attr;
+		code[pc].val.binInstr.op = MUL;
+		pc++;
+
+		attr = Prod_TE1(tmp);
+	}
+	else if (lookahead.token == SYN_DIV)
+	{
+		// TE1-->/F TE1
+		match(SYN_DIV);
+		AttributeNode *F_attr = Prod_F();
+		AttributeNode *tmp = (AttributeNode*)malloc(sizeof(AttributeNode));
+		tmp->type = TMP_PTR;
+
+		code[pc].type = BIN;
+		code[pc].val.binInstr.x = tmp;
+		code[pc].val.binInstr.y = pre_attr;
+		code[pc].val.binInstr.z = F_attr;
+		code[pc].val.binInstr.op = DIV;
+		pc++;
+
+		attr = Prod_TE1(tmp);
+	}
+	else
+	{
+		// TE1-->
+		attr = pre_attr;
+	}
+	return attr;
 }
 
 static AttributeNode* Prod_F()
@@ -701,6 +718,3 @@ static AttributeNode* Prod_F()
 		FreeExit();
 	return attr;
 }
-
-
-
