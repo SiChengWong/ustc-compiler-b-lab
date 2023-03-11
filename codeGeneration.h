@@ -25,7 +25,7 @@ extern AttributeNode* lookupAttribute(AttributeNode *attribute, enum AttributeTy
 extern AttributeNode *installAttribute(AttributeNode *attribute, AttributeNode *head);
 
 // data structure for Instruction
-enum BinaryOperator{ADD, SUB, MUL, DIV, AND, OR, GT, GE, LT, LE, EQ};
+enum BinaryOperator{ADD, SUB, MUL, DIV, AND, OR, GT, GE, LT, LE, EQ, NE};
 typedef struct BinaryOperationInstruction
 {
     AttributeNode *x, *y, *z;

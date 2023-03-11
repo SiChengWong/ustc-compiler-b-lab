@@ -18,11 +18,11 @@ static int Prod_D();
 static int Prod_L(int type);
 static int Prod_T();
 static int Prod_A();
-static int Prod_B();
-static int Prod_B1(int bval);
-static int Prod_TB();
-static int Prod_TB1(int bval);
-static int Prod_FB();
+static AttributeNode* Prod_B();
+static AttributeNode* Prod_B1(AttributeNode* pre_attr);
+static AttributeNode* Prod_TB();
+static AttributeNode* Prod_TB1(AttributeNode* pre_attr);
+static AttributeNode* Prod_FB();
 static AttributeNode* Prod_E();
 static AttributeNode* Prod_E1(AttributeNode *pre_attr);
 static AttributeNode* Prod_TE();
@@ -273,25 +273,25 @@ static int Prod_S()
 static int Prod_D()
 {
 	int type;
-	IDTABLE *p;
-	EXPVAL exp;
-	#if defined(AnaTypeSyn)
-	printf("SYN: D-->T id [=E] L;\n");
-	#endif
+	// D-->T id [=E] L;
 	type=Prod_T();
 	match(SYN_ID);
-	p=InstallID();
+	IDTABLE *p=InstallID();
 	p->type=type;
 	if (lookahead.token==SYN_SET)
 	{
 		match(SYN_SET);
-		exp=Prod_E();
-		if (run_status==1)
-		{	if (type==ID_INT)
-				p->val.intval=cast2int(exp);
-			else if (type==ID_CHAR)
-				p->val.charval=cast2char(exp);
-		}
+		AttributeNode *E_attr = Prod_E();
+
+		AttributeNode *tmp = (AttributeNode*)malloc(sizeof(AttributeNode));
+		tmp->type = ID_PTR;
+		tmp->next = NULL;
+		tmp->val.id_ptr = p;
+
+		code[pc].type = DUP;
+		code[pc].val.dupInstr.x = tmp;
+		code[pc].val.dupInstr.y = E_attr;
+		pc++;
 	}
 	Prod_L(type);
 	match(SYN_SEMIC);
@@ -300,36 +300,31 @@ static int Prod_D()
 
 static int Prod_L(int type)
 {
-	IDTABLE *p;
-	EXPVAL exp;
 	if (lookahead.token==SYN_COMMA)
 	{
-		#if defined(AnaTypeSyn)
-		printf("SYN: L-->, id [=E] L\n");
-		#endif
+		// L-->, id [=E] L
 		match(SYN_COMMA);
 		match(SYN_ID);
-		p=InstallID();
+		IDTABLE *p=InstallID();
 		p->type=type;
 		if (lookahead.token==SYN_SET)
 		{
 			match(SYN_SET);
-			exp=Prod_E();
-			if (run_status==1)
-			{	if (type==ID_INT)
-					p->val.intval=cast2int(exp);
-				else if (type==ID_CHAR)
-					p->val.charval=cast2char(exp);
-			}
+			AttributeNode *E_attr = Prod_E();
+
+			AttributeNode *tmp = (AttributeNode*)malloc(sizeof(AttributeNode));
+			tmp->type = ID_PTR;
+			tmp->next = NULL;
+			tmp->val.id_ptr = p;
+
+			code[pc].type = DUP;
+			code[pc].val.dupInstr.x = tmp;
+			code[pc].val.dupInstr.y = E_attr;
+			pc++;
 		}
 		Prod_L(type);
 	}
-	else
-	{
-		#if defined(AnaTypeSyn)
-		printf("SYN: L--> \n");
-		#endif
-	}
+	// L-->
 	return(0);
 }
 
@@ -337,19 +332,15 @@ static int Prod_T()
 {
 	if (lookahead.token==SYN_INT)
 	{
-		#if defined(AnaTypeSyn)
-		printf("SYN: T-->int\n");
-		#endif
+		// T-->int
 		match(SYN_INT);
-		return(ID_INT);
+		return ID_INT;
 	}
 	else if (lookahead.token==SYN_CHAR)
 	{
-		#if defined(AnaTypeSyn)
-		printf("SYN: T-->char\n");
-		#endif
+		// T-->char
 		match(SYN_CHAR);
-		return(ID_CHAR);
+		return ID_CHAR;
 	}
 	else
 		FreeExit();
@@ -358,224 +349,254 @@ static int Prod_T()
 
 static int Prod_A()
 {
-	IDTABLE *p;
-	EXPVAL exp;
-	#if defined(AnaTypeSyn)
-	printf("SYN: A-->id=E;\n");
-	#endif
+	// A-->id=E;
 	match(SYN_ID);
-	p=LookupID();
+	IDTABLE *p = LookupID();
 	match(SYN_SET);
-	exp=Prod_E();
-	match(SYN_SEMIC);
-	if (run_status==1)
-	{	if (p->type==ID_INT)
-			p->val.intval=cast2int(exp);
-		else if (p->type==ID_CHAR)
-			p->val.charval=cast2char(exp);
-	}
-	return(0);
+	AttributeNode E_attr = Prod_E();
+
+	AttributeNode *tmp = (AttributeNode*)malloc(sizeof(AttributeNode));
+	tmp->type = ID_PTR;
+	tmp->next = NULL;
+	tmp->val.id_ptr = p;
+	
+	code[pc].type = DUP;
+	code[pc].val.dupInstr.x = tmp;
+	code[pc].val.dupInstr.y = E_attr;
+	pc++;
+
+	return 0;
 }
 
-static int Prod_B()
+static AttributeNode* Prod_B()
 {
-	int bval1,bval2;
-	#if defined(AnaTypeSyn)
-	printf("SYN: B-->id=TB B1\n");
-	#endif
-	bval1=Prod_TB();
-	bval2=Prod_B1(bval1);
-	return(bval2);
+	// B-->TB B1
+	AttributeNode *TB_attr = Prod_TB();
+	AttributeNode *B1_attr = Prod_B1(TB_attr);
+	return B1_attr;
 }
 
-static int Prod_B1(int bval1)
+static AttributeNode* Prod_B1(AttributeNode *pre_attr)
 {
-	int bval2;
-	if (lookahead.token==SYN_OR)
+	AttributeNode *attr;
+	if (lookahead.token == SYN_OR)
 	{
-		#if defined(AnaTypeSyn)
-		printf("SYN: B1-->|| B1\n");
-		#endif
+		// B1-->|| TB B1
 		match(SYN_OR);
-		bval2=Prod_TB();
-		bval1=(run_status==1 && (bval1==1 || bval2==1)) ? 1 : 0;
-		bval2=Prod_B1(bval1);
-		return(bval2);
+		AttributeNode *TB_attr = Prod_TB();
+		AttributeNode *tmp = (AttributeNode*)malloc(sizeof(AttributeNode));
+		tmp->type = TMP_PTR;
+		tmp->next = NULL;
+
+		code[pc].type = BIN;
+		code[pc].val.binInstr.x = tmp;
+		code[pc].val.binInstr.y = pre_attr;
+		code[pc].val.binInstr.z = TB_attr;
+		code[pc].val.binInstr.op = OR;
+		pc++;
+
+		attr = Prod_B1(tmp);
 	}
 	else
 	{
-		#if defined(AnaTypeSyn)
-		printf("SYN: B1--> \n");
-		#endif
-		return(bval1);
+		// B1-->
+		attr = pre_attr;
 	}
+	return attr;
 }
 
-static int Prod_TB()
+static AttributeNode* Prod_TB()
 {
-	int bval1,bval2;
-	#if defined(AnaTypeSyn)
-	printf("SYN: TB-->FB TB1\n");
-	#endif
-	bval1=Prod_FB();
-	bval2=Prod_TB1(bval1);
-	return(bval2);
+	// TB-->FB TB1
+	AttributeNode *FB_attr = Prod_FB();
+	AttributeNode *TB1_attr = Prod_TB1(FB_attr);
+	return TB1_attr;
 }
 
-static int Prod_TB1(int bval1)
+static AttributeNode* Prod_TB1(AttributeNode *pre_attr)
 {
-	int bval2;
-	if (lookahead.token==SYN_AND)
+	AttributeNode *attr;
+	if (lookahead.token == SYN_AND)
 	{
-		#if defined(AnaTypeSyn)
-		printf("SYN: TB1-->&& TB1\n");
-		#endif
-		match(SYN_AND);
-		bval1=Prod_FB();
-		bval1=(run_status==1 && (bval1==1 && bval2==1)) ? 1 : 0;
-		bval2=Prod_TB1(bval1);
-		return(bval2);
+		// TB1-->&& FB TB1
+		match(SYN_ADD);
+		AttributeNode *FB_attr = Prod_FB();
+		AttributeNode *tmp = (AttributeNode*)malloc(sizeof(AttributeNode));
+		tmp->type = TMP_PTR;
+		tmp->next = NULL;
+
+		code[pc].type = BIN;
+		code[pc].val.binInstr.x = tmp;
+		code[pc].val.binInstr.y = pre_attr;
+		code[pc].val.binInstr.z = FB_attr;
+		code[pc].val.binInstr.op = AND;
+		pc++;
+
+		attr = Prod_TB1(tmp);
 	}
 	else
 	{
-		#if defined(AnaTypeSyn)
-		printf("SYN: TB1--> \n");
-		#endif
-		return(bval1);
+		// TB1-->
+		attr = pre_attr;
 	}
+	return attr;
 }
 
-static int Prod_FB()
+static AttributeNode* Prod_FB()
 {
-	int bval;
-	EXPVAL val1,val2;
-	int ival1,ival2;
-	if (lookahead.token==SYN_NOT)
+	AttributeNode *attr;
+	if (lookahead.token == SYN_NOT)
 	{
-		#if defined(AnaTypeSyn)
-		printf("SYN: FB-->!B\n");
-		#endif
+		// FB-->!B
 		match(SYN_NOT);
-		bval=Prod_B();
-		return(run_status==1 ? 1-bval : 0);
+		AttributeNode *B_attr = Prod_B();
+		attr = (AttributeNode*)malloc(sizeof(AttributeNode));
+		attr->type = TMP_PTR;
+		attr->next = NULL;
+		
+		code[pc].type = UNA;
+		code[pc].val.unaInstr.x = attr;
+		code[pc].val.unaInstr.y = B_attr;
+		code[pc].val.unaInstr.op = NEG;
+		pc++;
 	}
-	else if (lookahead.token==SYN_TRUE)
+	else if (lookahead.token == SYN_TRUE)
 	{
-		#if defined(AnaTypeSyn)
-		printf("SYN: FB-->TRUE\n");
-		#endif
+		// FB-->TRUE
 		match(SYN_TRUE);
-		return(run_status==1 ? 1 : 0);
+		attr = (AttributeNode*)malloc(sizeof(AttributeNode));
+		attr->type = IMM_VAL;
+		attr->next = NULL;
+		attr->val.imm.type = ID_INT;
+		attr->val.imm.val.intval = 1;
 	}
-	else if (lookahead.token==SYN_FALSE)
+	else if (lookahead.token == SYN_FALSE)
 	{
-		#if defined(AnaTypeSyn)
-		printf("SYN: FB-->FALSE\n");
-		#endif
+		// FB-->FALSE
 		match(SYN_FALSE);
-		return(run_status==1 ? 0 : 0);
+		attr->type = IMM_VAL;
+		attr->next = NULL;
+		attr->val.imm.type = ID_INT;
+		attr->val.imm.val.intval = 0;
 	}
-	else if (lookahead.token==SYN_ID || lookahead.token==SYN_NUM || lookahead.token==SYN_PAREN_L)
+	else if (lookahead.token == SYN_ID || lookahead.token == SYN_NUM || lookahead.token == SYN_PAREN_L)
 	{
-		val1=Prod_E();
-		if (run_status==1) ival1=cast2int(val1);
-		if (lookahead.token==SYN_LT)
-		{	
-			#if defined(AnaTypeSyn)
-			printf("SYN: FB-->E<E\n");
-			#endif
+		AttributeNode *E_attr = Prod_E();
+		if (lookahead.token == SYN_LT)
+		{
+			// FB-->E<E
 			match(SYN_LT);
-			val2=Prod_E();
-			if (run_status==1)
-			{	ival2=cast2int(val2);
-				return(ival1<ival2 ? 1 : 0);
-			}
-			else
-				return(0);
+			AttributeNode *E_1_attr = E_attr;
+			AttributeNode *E_2_attr = Prod_E();
+			attr = (AttributeNode*)malloc(sizeof(AttributeNode));
+			attr->type = TMP_PTR;
+			attr->next = NULL;
+			
+			code[pc].type = BIN;
+			code[pc].val.binInstr.x = attr;
+			code[pc].val.binInstr.y = E_1_attr;
+			code[pc].val.binInstr.z = E_2_attr;
+			code[pc].val.binInstr.op = LT;
+			pc++;
 		}
-		else if (lookahead.token==SYN_LE)
+		else if (lookahead.token == SYN_LE)
 		{
-			#if defined(AnaTypeSyn)
-			printf("SYN: FB-->E<=E\n");
-			#endif
+			// FB-->E<=E
 			match(SYN_LE);
-			val2=Prod_E();
-			if (run_status==1)
-			{	ival2=cast2int(val2);
-				return(ival1<=ival2 ? 1 : 0);
-			}
-			else
-				return(0);
+			AttributeNode *E_1_attr = E_attr;
+			AttributeNode *E_2_attr = Prod_E();
+			attr = (AttributeNode*)malloc(sizeof(AttributeNode));
+			attr->type = TMP_PTR;
+			attr->next = NULL;
+			
+			code[pc].type = BIN;
+			code[pc].val.binInstr.x = attr;
+			code[pc].val.binInstr.y = E_1_attr;
+			code[pc].val.binInstr.z = E_2_attr;
+			code[pc].val.binInstr.op = LE;
+			pc++;
 		}
-		else if (lookahead.token==SYN_GT)
+		else if (lookahead.token == SYN_GT)
 		{
-			#if defined(AnaTypeSyn)
-			printf("SYN: FB-->E>E\n");
-			#endif
+			// FB-->E>E
 			match(SYN_GT);
-			val2=Prod_E();
-			if (run_status==1)
-			{	ival2=cast2int(val2);
-				return(ival1>ival2 ? 1 : 0);
-			}
-			else
-				return(0);
+			AttributeNode *E_1_attr = E_attr;
+			AttributeNode *E_2_attr = Prod_E();
+			attr = (AttributeNode*)malloc(sizeof(AttributeNode));
+			attr->type = TMP_PTR;
+			attr->next = NULL;
+			
+			code[pc].type = BIN;
+			code[pc].val.binInstr.x = attr;
+			code[pc].val.binInstr.y = E_1_attr;
+			code[pc].val.binInstr.z = E_2_attr;
+			code[pc].val.binInstr.op = GT;
+			pc++;
 		}
-		else if (lookahead.token==SYN_GE)
+		else if (lookahead.token == SYN_GE)
 		{
-			#if defined(AnaTypeSyn)
-			printf("SYN: FB-->E>=E\n");
-			#endif
+			// FB-->E>=E
 			match(SYN_GE);
-			val2=Prod_E();
-			if (run_status==1)
-			{	ival2=cast2int(val2);
-				return(ival1>=ival2 ? 1 : 0);
-			}
-			else
-				return(0);
+			AttributeNode *E_1_attr = E_attr;
+			AttributeNode *E_2_attr = Prod_E();
+			attr = (AttributeNode*)malloc(sizeof(AttributeNode));
+			attr->type = TMP_PTR;
+			attr->next = NULL;
+			
+			code[pc].type = BIN;
+			code[pc].val.binInstr.x = attr;
+			code[pc].val.binInstr.y = E_1_attr;
+			code[pc].val.binInstr.z = E_2_attr;
+			code[pc].val.binInstr.op = GE;
+			pc++;
 		}
-		else if (lookahead.token==SYN_EQ)
+		else if (lookahead.token == SYN_EQ)
 		{
-			#if defined(AnaTypeSyn)
-			printf("SYN: FB-->E==E\n");
-			#endif
+			// FB-->E==E
 			match(SYN_EQ);
-			val2=Prod_E();
-			if (run_status==1)
-			{	ival2=cast2int(val2);
-				return(ival1==ival2 ? 1 : 0);
-			}
-			else
-				return(0);
+			AttributeNode *E_1_attr = E_attr;
+			AttributeNode *E_2_attr = Prod_E();
+			attr = (AttributeNode*)malloc(sizeof(AttributeNode));
+			attr->type = TMP_PTR;
+			attr->next = NULL;
+			
+			code[pc].type = BIN;
+			code[pc].val.binInstr.x = attr;
+			code[pc].val.binInstr.y = E_1_attr;
+			code[pc].val.binInstr.z = E_2_attr;
+			code[pc].val.binInstr.op = EQ;
+			pc++;
 		}
-		else if (lookahead.token==SYN_NE)
+		else if (lookahead.token == SYN_NE)
 		{
-			#if defined(AnaTypeSyn)
-			printf("SYN: FB-->E!=E\n");
-			#endif
+			// FB-->E!=E
 			match(SYN_NE);
-			val2=Prod_E();
-			if (run_status==1)
-			{	ival2=cast2int(val2);
-				return(ival1!=ival2 ? 1 : 0);
-			}
-			else
-				return(0);
+			AttributeNode *E_1_attr = E_attr;
+			AttributeNode *E_2_attr = Prod_E();
+			attr = (AttributeNode*)malloc(sizeof(AttributeNode));
+			attr->type = TMP_PTR;
+			attr->next = NULL;
+			
+			code[pc].type = BIN;
+			code[pc].val.binInstr.x = attr;
+			code[pc].val.binInstr.y = E_1_attr;
+			code[pc].val.binInstr.z = E_2_attr;
+			code[pc].val.binInstr.op = NE;
+			pc++;
 		}
 		else
 		{
-			if (run_status==1)
-				return(ival1!=0 ? 1 : 0);
-			else
-				return(0);
+			// FB-->E
+			attr = E_attr;
 		}
-
+		return attr;
 	}
 	else
-	{	FreeExit();
-		return(0);
+	{
+		FreeExit();
+		return 0;
 	}
+	
 }
 
 static AttributeNode* Prod_E()
@@ -596,6 +617,7 @@ static AttributeNode* Prod_E1(AttributeNode *pre_attr)
 		AttributeNode *TE_attr = Prod_TE();
 		AttributeNode *tmp = (AttributeNode*)malloc(sizeof(AttributeNode));
 		tmp->type = TMP_PTR;
+		tmp->next = NULL;
 
 		code[pc].type = BIN;
 		code[pc].val.binInstr.x = tmp;
@@ -606,13 +628,14 @@ static AttributeNode* Prod_E1(AttributeNode *pre_attr)
 
 		attr = Prod_E1(tmp);
 	}
-	if (lookahead.token == SYN_SUB)
+	else if (lookahead.token == SYN_SUB)
 	{
 		// E1-->-TE E1
 		match(SYN_SUB);
 		AttributeNode *TE_attr = Prod_TE();
 		AttributeNode *tmp = (AttributeNode*)malloc(sizeof(AttributeNode));
 		tmp->type = TMP_PTR;
+		tmp->next = NULL;
 
 		code[pc].type = BIN;
 		code[pc].val.binInstr.x = tmp;
@@ -649,6 +672,7 @@ static AttributeNode* Prod_TE1(AttributeNode *pre_attr)
 		AttributeNode *F_attr = Prod_F();
 		AttributeNode *tmp = (AttributeNode*)malloc(sizeof(AttributeNode));
 		tmp->type = TMP_PTR;
+		tmp->next = NULL;
 
 		code[pc].type = BIN;
 		code[pc].val.binInstr.x = tmp;
@@ -666,6 +690,7 @@ static AttributeNode* Prod_TE1(AttributeNode *pre_attr)
 		AttributeNode *F_attr = Prod_F();
 		AttributeNode *tmp = (AttributeNode*)malloc(sizeof(AttributeNode));
 		tmp->type = TMP_PTR;
+		tmp->next = NULL;
 
 		code[pc].type = BIN;
 		code[pc].val.binInstr.x = tmp;
