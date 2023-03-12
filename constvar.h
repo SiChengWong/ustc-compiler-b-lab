@@ -102,8 +102,8 @@ typedef struct AttributeNode
     struct AttributeNode *next;
 }AttributeNode;
 
-extern AttributeNode* lookupAttribute(AttributeNode *attribute, enum AttributeType type);
-extern AttributeNode *installAttribute(AttributeNode *attribute, AttributeNode *head);
+//extern AttributeNode *lookupAttribute(AttributeNode *attribute, enum AttributeType type);
+//extern AttributeNode *installAttribute(AttributeNode *attribute, AttributeNode *head);
 
 // data structure for Instruction
 enum BinaryOperator{ADD, SUB, MUL, DIV, AND, OR, GT, GE, LT, LE, EQ, NE};
@@ -158,9 +158,5 @@ typedef struct Instruction
     enum InstructionType type;
     union InstructionVal val;
 }Instr;
-
-#define MAX_CODE 1024
-Instr code[MAX_CODE];       // code stack
-int pc;                     // program counter
 
 #endif

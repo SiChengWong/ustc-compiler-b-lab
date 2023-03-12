@@ -35,7 +35,9 @@ static char curtoken_str[MAXTOKENLEN];
 static IDTABLE *IDTHead=NULL;
 static int run_status=1;	//0；程序不执行；1:程序正常执行；2:跳过当前结构后继续执行
 
-pc = 0;			// initialize program counter
+#define MAX_CODE 1024
+Instr code[MAX_CODE];       // code stack
+int pc = 0;                     // program counter
 
 void SyntaxAnalysis()
 {
@@ -253,7 +255,7 @@ static int Prod_S(int *S_next)
 		{
 			// S-->if (B) {S} S
 			// backpatch B.false
-			B_false = pc;
+			*B_false = pc;
 		}
 		Prod_S(S_next);
 	}
