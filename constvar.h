@@ -93,7 +93,7 @@ union AttributeVal
     EXPVAL imm;         // immediate number value
 };
 
-enum AttributeType{TRUE_label, FALSE_label, BEGIN_label, NEXT_label, ID_PTR, TMP_PTR, IMM_VAL};
+enum AttributeType{ID_PTR, TMP_PTR, IMM_VAL};
 
 typedef struct AttributeNode
 {

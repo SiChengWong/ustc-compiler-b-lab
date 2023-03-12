@@ -8,6 +8,7 @@ static int match (int t);
 static int strcompare(char *sstr, char *tstr);	//比较两个串
 static IDTABLE* InstallID();		//在符号表中为curtoken_str建立一个条目
 static IDTABLE* LookupID();			//在符号表中查找curtoken_str
+static int PrintCode();
 static void FreeExit();
 static int cast2int(EXPVAL exp);		//将exp的值转换为int类型
 static char cast2char(EXPVAL exp);		//将exp的值转换为char类型
@@ -39,6 +40,52 @@ static int run_status=1;	//0；程序不执行；1:程序正常执行；2:跳过当前结构后继续执
 Instr code[MAX_CODE];       // code stack
 int pc = 0;                     // program counter
 
+// print program code
+int PrintCode(){
+	for (int i = 0; i < pc; i++)
+	{
+		printf("%d\t", i);
+		switch (code[i].type)
+		{
+		case BIN:
+			printf("&%x\t=\t&%x\tOP%d\t&%x\n", 
+				code[i].val.binInstr.x,
+				code[i].val.binInstr.y,
+				code[i].val.binInstr.op,
+				code[i].val.binInstr.z);
+			break;
+		case UNA:
+			printf("&%x\t=\tOP%d\t&%x\n",
+				code[i].val.unaInstr.x,
+				code[i].val.unaInstr.op,
+				code[i].val.unaInstr.y);
+			break;
+		case DUP:
+			printf("&%x\t=\t&%x\n",
+				code[i].val.dupInstr.x,
+				code[i].val.dupInstr.y);
+			break;
+		case GOTO:
+			printf("goto\tL%d\n", *code[i].val.gotoInstr.label);
+			break;
+		case CGOTO:
+			printf("if\t&%x\tgoto\tL%d\n", 
+				code[i].val.conGotoInstr.condition,
+				*code[i].val.conGotoInstr.label);
+			break;
+		case PRINT:
+			printf("SHOW\t&%x", code[i].val.printInstr.expression);
+			break;
+		}
+	}
+	return 0;
+}
+
+// execute program code
+int Execute(){
+	return 0;
+}
+
 void SyntaxAnalysis()
 {
 #if defined(AnaTypeLex)
@@ -59,6 +106,7 @@ void SyntaxAnalysis()
 	lookahead=nextToken();
 	if (Prod_FUNC()==ERR)
 		printf("PROGRAM HALT!\n");
+	PrintCode();
 	FreeExit();
 
 #endif
@@ -382,6 +430,7 @@ static int Prod_A()
 	IDTABLE *p = LookupID();
 	match(SYN_SET);
 	AttributeNode *E_attr = Prod_E();
+	match(SYN_SEMIC);
 
 	AttributeNode *tmp = (AttributeNode*)malloc(sizeof(AttributeNode));
 	tmp->type = ID_PTR;
