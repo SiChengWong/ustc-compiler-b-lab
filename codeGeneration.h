@@ -3,16 +3,16 @@
 // data structure for attributes
 union AttributeVal
 {
-    int true_lable;     // true lable pointer
-    int false_lable;    // false lable pointer
-    int begin_lable;    // begin lable pointer
-    int next_lable;     // next lable pointer
+    int *true_label;     // true label pointer
+    int *false_label;    // false label pointer
+    int *begin_label;    // begin label pointer
+    int *next_label;     // next label pointer
     IDTABLE *id_ptr;    // id pointer
     EXPVAL *tmp_ptr;    // temporary variable pointer
     EXPVAL imm;         // immediate number value
 };
 
-enum AttributeType{TRUE_LABLE, FALSE_LABLE, BEGIN_LABLE, NEXT_LABLE, ID_PTR, TMP_PTR, IMM_VAL};
+enum AttributeType{TRUE_label, FALSE_label, BEGIN_label, NEXT_label, ID_PTR, TMP_PTR, IMM_VAL};
 
 typedef struct AttributeNode
 {
@@ -46,14 +46,20 @@ typedef struct DuplicationInstruction
 
 typedef struct GotoInstruction
 {
-    int lable;
+    int *label;
 }GotoInstr;
 
 typedef struct ConditionalGotoInstruction
 {
     AttributeNode *condition;
-    int lable;
+    int *label;
 }ConGotoInstr;
+
+typedef struct PrintInstruction
+{
+    AttributeNode *expression;
+}PrintInstr;
+
 
 union InstructionVal
 {
@@ -62,9 +68,10 @@ union InstructionVal
     DupInstr dupInstr;
     GotoInstr gotoInstr;
     ConGotoInstr conGotoInstr;
+    PrintInstr printInstr;
 };
 
-enum InstructionType{BIN, UNA, DUP, GOTO, CGOTO};
+enum InstructionType{BIN, UNA, DUP, GOTO, CGOTO, PRINT};
 typedef struct Instruction
 {
     enum InstructionType type;

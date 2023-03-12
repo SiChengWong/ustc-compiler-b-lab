@@ -176,96 +176,118 @@ static int Prod_FUNC()
 	return(0);
 }
 
-static int Prod_S()
+static int Prod_S(int *S_next)
 {
-	long file_index;
-	EXPVAL exp;
-	int bval;
 	if (lookahead.token==SYN_INT || lookahead.token==SYN_CHAR)
 	{
-		#if defined(AnaTypeSyn)
-		printf("SYN: S-->D S\n");
-		#endif
+		// S-->D S
 		Prod_D();
-		Prod_S();
+		Prod_S(S_next);
 	}
 	else if (lookahead.token==SYN_ID)
 	{
-		#if defined(AnaTypeSyn)
-		printf("SYN: S-->A S\n");
-		#endif
+		// S-->A S
 		Prod_A();
-		Prod_S();
+		Prod_S(S_next);
 	}
 	else if (lookahead.token==SYN_SHOW)
 	{
-		#if defined(AnaTypeSyn)
-		printf("SYN: S-->show(E); S\n");
-		#endif
+		// S-->show(E); S
 		match(SYN_SHOW);
 		match(SYN_PAREN_L);
-		exp=Prod_E();
+		AttributeNode *E_attr=Prod_E();
 		match(SYN_PAREN_R);
 		match(SYN_SEMIC);
-		if (run_status==1)
-			if (exp.type==ID_INT)
-				printf("%d",exp.val.intval);
-			else if (exp.type==ID_CHAR)
-				printf("%c",exp.val.charval);
-		Prod_S();
+
+		code[pc].type = PRINT;
+		code[pc].val.printInstr.expression = E_attr;
+		pc++;
+
+		Prod_S(S_next);
 	}
 	else if (lookahead.token==SYN_IF)
 	{
-		#if defined(AnaTypeSyn)
-		printf("SYN: S-->if (B) {S} [else {S}] S");
-		#endif
+		// S-->if (B) {S} [else {S}] S
 		match(SYN_IF);
 		match(SYN_PAREN_L);
-		bval=Prod_B();
+		AttributeNode B_attr = Prod_B();
 		match(SYN_PAREN_R);
-		if (run_status==1 && bval==0) run_status=2;
+
+		// emit conditional goto instruction
+		int *B_false = (int*)malloc(sizeof(int));
+		code[pc].type = CGOTO;
+		code[pc].val.conGotoInstr.condition = B_attr;
+		code[pc].val.conGotoInstr.label = B_false;	// B.false label
+		pc++;
+		
 		match(SYN_BRACE_L);
-		Prod_S();
+		int *S_1_next = (int*)malloc(sizeof(int));
+		Prod_S(S_1_next);
 		match(SYN_BRACE_R);
-		if (lookahead.token==SYN_ELSE)
+
+		// emit unconditional goto instruction
+		code[pc].type = GOTO;
+		code[pc].val.gotoInstr.label = S_1_next;
+		pc++;
+
+		if (lookahead.token == SYN_ELSE)
 		{
+			// S-->if (B) {S} else {S} S
+			// backpatch B.false
+			*B_false = pc;
+
 			match(SYN_ELSE);
-			if (run_status==1) run_status=2;
-			else if (run_status==2) run_status=1;
 			match(SYN_BRACE_L);
-			Prod_S();
+			int *S_2_next = S_1_next;
+			Prod_S(S_2_next);
 			match(SYN_BRACE_R);
-			if (run_status==2) run_status=1;
+
+			// backpatch S1.next, S2.next
+			*S_1_next = *S_2_next = pc;
 		}
-		Prod_S();
+		else
+		{
+			// S-->if (B) {S} S
+			// backpatch B.false
+			B_false = pc;
+		}
+		Prod_S(S_next);
 	}
 	else if (lookahead.token==SYN_WHILE)
 	{
-		#if defined(AnaTypeSyn)
-		printf("SYN: S-->while(B) {S} S\n");
-		#endif
+		// S-->while(B) {S} S
+		// generate label S.begin
+		int *S_begin = (int*)malloc(sizeof(int));
+		*S_begin = pc;
+
 		match(SYN_WHILE);
-		file_index=ftell(sFile)-6;
 		match(SYN_PAREN_L);
-		bval=Prod_B();
+		AttributeNode *B_attr = Prod_B();
 		match(SYN_PAREN_R);
-		if (run_status==1 && bval==0) run_status=2;
+
+		// emit conditional goto instruction
+		int *B_false = (int*)malloc(sizeof(int));
+		code[pc].type = CGOTO;
+		code[pc].val.conGotoInstr.condition = B_attr;
+		code[pc].val.conGotoInstr.label = B_false;
+		pc++;
+
 		match(SYN_BRACE_L);
-		Prod_S();
+		Prod_S(S_begin);
 		match(SYN_BRACE_R);
-		if (run_status==1)
-		{	fseek(sFile,file_index,SEEK_SET);
-			renewLex();
-		}
-		else if (run_status==2)
-			run_status=1;
-		Prod_S();
+
+		// emit unconditional goto instruction
+		code[pc].type = GOTO;
+		code[pc].val.gotoInstr.label = S_begin;
+		pc++;
+
+		// backpatch B.false
+		*B_false = pc;
+		Prod_S(S_next);
 	}
 	else
 	{
-		#if defined(AnaTypeSyn)
-		printf("SYN: S--> \n");
-		#endif
+		// S--> 
 	}
 	return(0);
 }
