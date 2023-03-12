@@ -74,7 +74,7 @@ int PrintCode(){
 				*code[i].val.conGotoInstr.label);
 			break;
 		case PRINT:
-			printf("SHOW\t&%x", code[i].val.printInstr.expression);
+			printf("SHOW\t&%x\n", code[i].val.printInstr.expression);
 			break;
 		}
 	}
