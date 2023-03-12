@@ -1,5 +1,5 @@
 #include "stdio.h"
-#include "codeGeneration.h"
+#include "constvar.h"
 
 AttributeNode* lookupAttribute(AttributeNode *head, enum AttributeType type){
     AttributeNode *p = head;

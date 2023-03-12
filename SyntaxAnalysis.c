@@ -1,7 +1,6 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "constvar.h"
-#include "codeGeneration.h"
 
 extern TERMINAL nextToken();
 extern void renewLex();
@@ -13,7 +12,7 @@ static void FreeExit();
 static int cast2int(EXPVAL exp);		//将exp的值转换为int类型
 static char cast2char(EXPVAL exp);		//将exp的值转换为char类型
 static int Prod_FUNC();
-static int Prod_S();
+static int Prod_S(int *S_next);
 static int Prod_D();
 static int Prod_L(int type);
 static int Prod_T();
@@ -35,7 +34,8 @@ static int curtoken_num;
 static char curtoken_str[MAXTOKENLEN];
 static IDTABLE *IDTHead=NULL;
 static int run_status=1;	//0；程序不执行；1:程序正常执行；2:跳过当前结构后继续执行
-static int pc = 0;			// initialize program counter
+
+pc = 0;			// initialize program counter
 
 void SyntaxAnalysis()
 {
@@ -171,7 +171,11 @@ static int Prod_FUNC()
 	match(SYN_PAREN_L);
 	match(SYN_PAREN_R);
 	match(SYN_BRACE_L);
-	Prod_S();
+
+	int *S_next = (int*)malloc(sizeof(int));
+	Prod_S(S_next);
+	*S_next = pc;
+
 	match(SYN_BRACE_R);
 	return(0);
 }
@@ -210,7 +214,7 @@ static int Prod_S(int *S_next)
 		// S-->if (B) {S} [else {S}] S
 		match(SYN_IF);
 		match(SYN_PAREN_L);
-		AttributeNode B_attr = Prod_B();
+		AttributeNode *B_attr = Prod_B();
 		match(SYN_PAREN_R);
 
 		// emit conditional goto instruction
@@ -375,7 +379,7 @@ static int Prod_A()
 	match(SYN_ID);
 	IDTABLE *p = LookupID();
 	match(SYN_SET);
-	AttributeNode E_attr = Prod_E();
+	AttributeNode *E_attr = Prod_E();
 
 	AttributeNode *tmp = (AttributeNode*)malloc(sizeof(AttributeNode));
 	tmp->type = ID_PTR;
@@ -625,7 +629,7 @@ static AttributeNode* Prod_E()
 {
 	// E-->TE E1
 	AttributeNode *TE_attr = Prod_TE();
-	AttributeNode *E1_attr = Prod_E1(TE_attr)
+	AttributeNode *E1_attr = Prod_E1(TE_attr);
 	return E1_attr;
 }
 
