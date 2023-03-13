@@ -5,13 +5,13 @@
 extern TERMINAL nextToken();
 extern void renewLex();
 static int match (int t);
-static int strcompare(char *sstr, char *tstr);	//±È½ÏÁ½¸ö´®
-static IDTABLE* InstallID();		//ÔÚ·ûºÅ±íÖÐÎªcurtoken_str½¨Á¢Ò»¸öÌõÄ¿
-static IDTABLE* LookupID();			//ÔÚ·ûºÅ±íÖÐ²éÕÒcurtoken_str
+static int strcompare(char *sstr, char *tstr);	//æ¯”è¾ƒä¸¤ä¸ªä¸²
+static IDTABLE* InstallID();		//åœ¨ç¬¦å·è¡¨ä¸­ä¸ºcurtoken_strå»ºç«‹ä¸€ä¸ªæ¡ç›®
+static IDTABLE* LookupID();			//åœ¨ç¬¦å·è¡¨ä¸­æŸ¥æ‰¾curtoken_str
 static int PrintCode();				// print IR code
 static void FreeExit();
-static int cast2int(EXPVAL exp);		//½«expµÄÖµ×ª»»ÎªintÀàÐÍ
-static char cast2char(EXPVAL exp);		//½«expµÄÖµ×ª»»ÎªcharÀàÐÍ
+static int cast2int(EXPVAL exp);		//å°†expçš„å€¼è½¬æ¢ä¸ºintç±»åž‹
+static char cast2char(EXPVAL exp);		//å°†expçš„å€¼è½¬æ¢ä¸ºcharç±»åž‹
 static int Prod_FUNC();
 static int Prod_S(int *S_next);
 static int Prod_D();
@@ -34,7 +34,7 @@ static TERMINAL lookahead;
 static int curtoken_num;
 static char curtoken_str[MAXTOKENLEN];
 static IDTABLE *IDTHead=NULL;
-static int run_status=1;	//0£»³ÌÐò²»Ö´ÐÐ£»1:³ÌÐòÕý³£Ö´ÐÐ£»2:Ìø¹ýµ±Ç°½á¹¹ºó¼ÌÐøÖ´ÐÐ
+static int run_status=1;	//0ï¼›ç¨‹åºä¸æ‰§è¡Œï¼›1:ç¨‹åºæ­£å¸¸æ‰§è¡Œï¼›2:è·³è¿‡å½“å‰ç»“æž„åŽç»§ç»­æ‰§è¡Œ
 
 #define MAX_CODE 1024
 Instr code[MAX_CODE];       // code stack
@@ -274,7 +274,7 @@ static IDTABLE* LookupID()
 static void FreeExit()
 {
 	IDTABLE *p,*q;
-	//ÊÍ·ÅÁ´±í¿Õ¼ä
+	//é‡Šæ”¾é“¾è¡¨ç©ºé—´
 	p=IDTHead;
 	while ((q=p)!=NULL)
 	{	p=p->next;
