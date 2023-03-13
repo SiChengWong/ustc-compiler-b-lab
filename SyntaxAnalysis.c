@@ -574,6 +574,7 @@ static AttributeNode* Prod_B1(AttributeNode *pre_attr)
 		AttributeNode *TB_attr = Prod_TB();
 		AttributeNode *tmp = (AttributeNode*)malloc(sizeof(AttributeNode));
 		tmp->type = TMP_PTR;
+		tmp->val.tmp_ptr = (EXPVAL*)malloc(sizeof(EXPVAL));
 
 		code[pc].type = BIN;
 		code[pc].val.binInstr.x = tmp;
@@ -609,6 +610,7 @@ static AttributeNode* Prod_TB1(AttributeNode *pre_attr)
 		match(SYN_ADD);
 		AttributeNode *FB_attr = Prod_FB();
 		AttributeNode *tmp = (AttributeNode*)malloc(sizeof(AttributeNode));
+		tmp->val.tmp_ptr = (EXPVAL*)malloc(sizeof(EXPVAL));
 		tmp->type = TMP_PTR;
 
 		code[pc].type = BIN;
@@ -638,6 +640,7 @@ static AttributeNode* Prod_FB()
 		AttributeNode *B_attr = Prod_B();
 		attr = (AttributeNode*)malloc(sizeof(AttributeNode));
 		attr->type = TMP_PTR;
+		attr->val.tmp_ptr = (EXPVAL*)malloc(sizeof(EXPVAL));
 		
 		code[pc].type = UNA;
 		code[pc].val.unaInstr.x = attr;
@@ -673,6 +676,7 @@ static AttributeNode* Prod_FB()
 			AttributeNode *E_2_attr = Prod_E();
 			attr = (AttributeNode*)malloc(sizeof(AttributeNode));
 			attr->type = TMP_PTR;
+			attr->val.tmp_ptr = (EXPVAL*)malloc(sizeof(EXPVAL));
 			
 			code[pc].type = BIN;
 			code[pc].val.binInstr.x = attr;
@@ -689,6 +693,7 @@ static AttributeNode* Prod_FB()
 			AttributeNode *E_2_attr = Prod_E();
 			attr = (AttributeNode*)malloc(sizeof(AttributeNode));
 			attr->type = TMP_PTR;
+			attr->val.tmp_ptr = (EXPVAL*)malloc(sizeof(EXPVAL));
 			
 			code[pc].type = BIN;
 			code[pc].val.binInstr.x = attr;
@@ -705,6 +710,7 @@ static AttributeNode* Prod_FB()
 			AttributeNode *E_2_attr = Prod_E();
 			attr = (AttributeNode*)malloc(sizeof(AttributeNode));
 			attr->type = TMP_PTR;
+			attr->val.tmp_ptr = (EXPVAL*)malloc(sizeof(EXPVAL));
 			
 			code[pc].type = BIN;
 			code[pc].val.binInstr.x = attr;
@@ -721,7 +727,7 @@ static AttributeNode* Prod_FB()
 			AttributeNode *E_2_attr = Prod_E();
 			attr = (AttributeNode*)malloc(sizeof(AttributeNode));
 			attr->type = TMP_PTR;
-			
+			attr->val.tmp_ptr = (EXPVAL*)malloc(sizeof(EXPVAL));			
 			
 			code[pc].type = BIN;
 			code[pc].val.binInstr.x = attr;
@@ -738,7 +744,7 @@ static AttributeNode* Prod_FB()
 			AttributeNode *E_2_attr = Prod_E();
 			attr = (AttributeNode*)malloc(sizeof(AttributeNode));
 			attr->type = TMP_PTR;
-			
+			attr->val.tmp_ptr = (EXPVAL*)malloc(sizeof(EXPVAL));
 			
 			code[pc].type = BIN;
 			code[pc].val.binInstr.x = attr;
@@ -755,6 +761,7 @@ static AttributeNode* Prod_FB()
 			AttributeNode *E_2_attr = Prod_E();
 			attr = (AttributeNode*)malloc(sizeof(AttributeNode));
 			attr->type = TMP_PTR;
+			attr->val.tmp_ptr = (EXPVAL*)malloc(sizeof(EXPVAL));
 			
 			code[pc].type = BIN;
 			code[pc].val.binInstr.x = attr;
@@ -796,6 +803,7 @@ static AttributeNode* Prod_E1(AttributeNode *pre_attr)
 		AttributeNode *TE_attr = Prod_TE();
 		AttributeNode *tmp = (AttributeNode*)malloc(sizeof(AttributeNode));
 		tmp->type = TMP_PTR;
+		tmp->val.tmp_ptr = (EXPVAL*)malloc(sizeof(EXPVAL));
 
 		code[pc].type = BIN;
 		code[pc].val.binInstr.x = tmp;
@@ -813,6 +821,7 @@ static AttributeNode* Prod_E1(AttributeNode *pre_attr)
 		AttributeNode *TE_attr = Prod_TE();
 		AttributeNode *tmp = (AttributeNode*)malloc(sizeof(AttributeNode));
 		tmp->type = TMP_PTR;
+		tmp->val.tmp_ptr = (EXPVAL*)malloc(sizeof(EXPVAL));
 
 		code[pc].type = BIN;
 		code[pc].val.binInstr.x = tmp;
@@ -849,6 +858,7 @@ static AttributeNode* Prod_TE1(AttributeNode *pre_attr)
 		AttributeNode *F_attr = Prod_F();
 		AttributeNode *tmp = (AttributeNode*)malloc(sizeof(AttributeNode));
 		tmp->type = TMP_PTR;
+		tmp->val.tmp_ptr = (EXPVAL*)malloc(sizeof(EXPVAL));
 
 		code[pc].type = BIN;
 		code[pc].val.binInstr.x = tmp;
@@ -866,6 +876,7 @@ static AttributeNode* Prod_TE1(AttributeNode *pre_attr)
 		AttributeNode *F_attr = Prod_F();
 		AttributeNode *tmp = (AttributeNode*)malloc(sizeof(AttributeNode));
 		tmp->type = TMP_PTR;
+		tmp->val.tmp_ptr = (EXPVAL*)malloc(sizeof(EXPVAL));
 
 		code[pc].type = BIN;
 		code[pc].val.binInstr.x = tmp;
