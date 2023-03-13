@@ -3,5 +3,7 @@ main()
   //test
   /*this is a test*/
   i=1; j=2;
-  show(i+j);
+  while(i<j){
+    i=i+1;
+  }
 }
