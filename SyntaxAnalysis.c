@@ -8,7 +8,7 @@ static int match (int t);
 static int strcompare(char *sstr, char *tstr);	//比较两个串
 static IDTABLE* InstallID();		//在符号表中为curtoken_str建立一个条目
 static IDTABLE* LookupID();			//在符号表中查找curtoken_str
-static int PrintCode();
+static int PrintCode();				// print IR code
 static void FreeExit();
 static int cast2int(EXPVAL exp);		//将exp的值转换为int类型
 static char cast2char(EXPVAL exp);		//将exp的值转换为char类型
@@ -40,6 +40,9 @@ static int run_status=1;	//0；程序不执行；1:程序正常执行；2:跳过当前结构后继续执
 Instr code[MAX_CODE];       // code stack
 int pc = 0;                     // program counter
 
+static char *binOpSet[] = {"+", "-", "*", "/", "&&", "||", ">", ">=", "<", "<=", "==", "!="};
+static char *unaOpSet[] = {"-", "!"};
+
 // print program code
 int PrintCode(){
 	for (int i = 0; i < pc; i++)
@@ -48,33 +51,130 @@ int PrintCode(){
 		switch (code[i].type)
 		{
 		case BIN:
-			printf("&%x\t=\t&%x\tOP%d\t&%x\n", 
-				code[i].val.binInstr.x,
-				code[i].val.binInstr.y,
-				code[i].val.binInstr.op,
-				code[i].val.binInstr.z);
+			// print x
+			switch (code[i].val.binInstr.x->type)
+			{
+			case ID_PTR:
+				printf("%s\t=\t", code[i].val.binInstr.x->val.id_ptr->name);
+				break;
+			case TMP_PTR:
+				printf("&%x\t=\t", code[i].val.binInstr.x->val.tmp_ptr);
+				break;
+			}
+			// print y
+			switch (code[i].val.binInstr.y->type)
+			{
+			case ID_PTR:
+				printf("%s\t", code[i].val.binInstr.y->val.id_ptr->name);
+				break;
+			case TMP_PTR:
+				printf("&%x\t", code[i].val.binInstr.y->val.tmp_ptr);
+				break;
+			case IMM_VAL:
+				printf("%d\t", code[i].val.binInstr.y->val.imm.val.intval);
+				break;
+			}
+			// print op
+			printf("%s\t", binOpSet[code[i].val.binInstr.op]);
+			// print z
+			switch (code[i].val.binInstr.z->type)
+			{
+			case ID_PTR:
+				printf("%s\n", code[i].val.binInstr.z->val.id_ptr->name);
+				break;
+			case TMP_PTR:
+				printf("&%x\n", code[i].val.binInstr.z->val.tmp_ptr);
+				break;
+			case IMM_VAL:
+				printf("%d\n", code[i].val.binInstr.z->val.imm.val.intval);
+				break;
+			}
 			break;
 		case UNA:
-			printf("&%x\t=\tOP%d\t&%x\n",
-				code[i].val.unaInstr.x,
-				code[i].val.unaInstr.op,
-				code[i].val.unaInstr.y);
+			// print x
+			switch (code[i].val.unaInstr.x->type)
+			{
+			case ID_PTR:
+				printf("%s\t=\t", code[i].val.unaInstr.x->val.id_ptr->name);
+				break;
+			case TMP_PTR:
+				printf("&%x\t=\t", code[i].val.unaInstr.x->val.tmp_ptr);
+				break;
+			}
+			// print op
+			printf("%s\t", unaOpSet[code[i].val.unaInstr.op]);
+			// print y
+			switch (code[i].val.unaInstr.y->type)
+			{
+			case ID_PTR:
+				printf("%s\n", code[i].val.unaInstr.y->val.id_ptr->name);
+				break;
+			case TMP_PTR:
+				printf("&%x\n", code[i].val.unaInstr.y->val.tmp_ptr);
+				break;
+			case IMM_VAL:
+				printf("%d\n", code[i].val.unaInstr.y->val.imm.val.intval);
+				break;
+			}
 			break;
 		case DUP:
-			printf("&%x\t=\t&%x\n",
-				code[i].val.dupInstr.x,
-				code[i].val.dupInstr.y);
+			// print x
+			switch (code[i].val.dupInstr.x->type)
+			{
+			case ID_PTR:
+				printf("%s\t=\t", code[i].val.dupInstr.x->val.id_ptr->name);
+				break;
+			case TMP_PTR:
+				printf("&%x\t=\t", code[i].val.dupInstr.x->val.tmp_ptr);
+				break;
+			}
+			// print y
+			switch (code[i].val.dupInstr.y->type)
+			{
+			case ID_PTR:
+				printf("%s\n", code[i].val.dupInstr.y->val.id_ptr->name);
+				break;
+			case TMP_PTR:
+				printf("&%x\n", code[i].val.dupInstr.y->val.tmp_ptr);
+				break;
+			case IMM_VAL:
+				printf("%d\n", code[i].val.dupInstr.y->val.imm.val.intval);
+				break;
+			}
 			break;
 		case GOTO:
 			printf("goto\tL%d\n", *code[i].val.gotoInstr.label);
 			break;
 		case CGOTO:
-			printf("if\t&%x\tgoto\tL%d\n", 
-				code[i].val.conGotoInstr.condition,
-				*code[i].val.conGotoInstr.label);
+			// print condition
+			switch (code[i].val.conGotoInstr.condition->type)
+			{
+			case ID_PTR:
+				printf("if\t%s\t", code[i].val.conGotoInstr.condition->val.id_ptr->name);
+				break;
+			case TMP_PTR:
+				printf("if\t&%x\t", code[i].val.conGotoInstr.condition->val.tmp_ptr);
+				break;
+			case IMM_VAL:
+				printf("if\t%d\t", code[i].val.conGotoInstr.condition->val.imm.val.intval);
+				break;
+			}
+			// print goto dest
+			printf("goto\tL%d\n", *code[i].val.conGotoInstr.label);
 			break;
 		case PRINT:
-			printf("SHOW\t&%x\n", code[i].val.printInstr.expression);
+			switch (code[i].val.printInstr.expression->type)
+			{
+			case ID_PTR:
+				printf("SHOW\t%s\n", code[i].val.printInstr.expression->val.id_ptr->name);
+				break;
+			case TMP_PTR:
+				printf("SHOW\t&%x\n", code[i].val.printInstr.expression->val.tmp_ptr);
+				break;
+			case IMM_VAL:
+				printf("SHOW\t%d\n", code[i].val.printInstr.expression->val.imm.val.intval);
+				break;
+			}
 			break;
 		}
 	}
@@ -268,11 +368,19 @@ static int Prod_S(int *S_next)
 		match(SYN_PAREN_R);
 
 		// emit conditional goto instruction
+		int *B_true = (int*)malloc(sizeof(int));
 		int *B_false = (int*)malloc(sizeof(int));
+		// generate true branch
 		code[pc].type = CGOTO;
 		code[pc].val.conGotoInstr.condition = B_attr;
-		code[pc].val.conGotoInstr.label = B_false;	// B.false label
+		code[pc].val.conGotoInstr.label = B_true;	// B.true label
 		pc++;
+		// generate false branch
+		code[pc].type = GOTO;
+		code[pc].val.gotoInstr.label = B_false;
+		pc++;
+		// backpatch B.true
+		*B_true = pc;
 		
 		match(SYN_BRACE_L);
 		int *S_1_next = (int*)malloc(sizeof(int));
@@ -361,7 +469,6 @@ static int Prod_D()
 
 		AttributeNode *tmp = (AttributeNode*)malloc(sizeof(AttributeNode));
 		tmp->type = ID_PTR;
-		tmp->next = NULL;
 		tmp->val.id_ptr = p;
 
 		code[pc].type = DUP;
@@ -390,7 +497,6 @@ static int Prod_L(int type)
 
 			AttributeNode *tmp = (AttributeNode*)malloc(sizeof(AttributeNode));
 			tmp->type = ID_PTR;
-			tmp->next = NULL;
 			tmp->val.id_ptr = p;
 
 			code[pc].type = DUP;
@@ -434,7 +540,6 @@ static int Prod_A()
 
 	AttributeNode *tmp = (AttributeNode*)malloc(sizeof(AttributeNode));
 	tmp->type = ID_PTR;
-	tmp->next = NULL;
 	tmp->val.id_ptr = p;
 	
 	code[pc].type = DUP;
@@ -463,7 +568,6 @@ static AttributeNode* Prod_B1(AttributeNode *pre_attr)
 		AttributeNode *TB_attr = Prod_TB();
 		AttributeNode *tmp = (AttributeNode*)malloc(sizeof(AttributeNode));
 		tmp->type = TMP_PTR;
-		tmp->next = NULL;
 
 		code[pc].type = BIN;
 		code[pc].val.binInstr.x = tmp;
@@ -500,7 +604,6 @@ static AttributeNode* Prod_TB1(AttributeNode *pre_attr)
 		AttributeNode *FB_attr = Prod_FB();
 		AttributeNode *tmp = (AttributeNode*)malloc(sizeof(AttributeNode));
 		tmp->type = TMP_PTR;
-		tmp->next = NULL;
 
 		code[pc].type = BIN;
 		code[pc].val.binInstr.x = tmp;
@@ -529,7 +632,6 @@ static AttributeNode* Prod_FB()
 		AttributeNode *B_attr = Prod_B();
 		attr = (AttributeNode*)malloc(sizeof(AttributeNode));
 		attr->type = TMP_PTR;
-		attr->next = NULL;
 		
 		code[pc].type = UNA;
 		code[pc].val.unaInstr.x = attr;
@@ -543,7 +645,6 @@ static AttributeNode* Prod_FB()
 		match(SYN_TRUE);
 		attr = (AttributeNode*)malloc(sizeof(AttributeNode));
 		attr->type = IMM_VAL;
-		attr->next = NULL;
 		attr->val.imm.type = ID_INT;
 		attr->val.imm.val.intval = 1;
 	}
@@ -552,7 +653,6 @@ static AttributeNode* Prod_FB()
 		// FB-->FALSE
 		match(SYN_FALSE);
 		attr->type = IMM_VAL;
-		attr->next = NULL;
 		attr->val.imm.type = ID_INT;
 		attr->val.imm.val.intval = 0;
 	}
@@ -567,7 +667,6 @@ static AttributeNode* Prod_FB()
 			AttributeNode *E_2_attr = Prod_E();
 			attr = (AttributeNode*)malloc(sizeof(AttributeNode));
 			attr->type = TMP_PTR;
-			attr->next = NULL;
 			
 			code[pc].type = BIN;
 			code[pc].val.binInstr.x = attr;
@@ -584,7 +683,6 @@ static AttributeNode* Prod_FB()
 			AttributeNode *E_2_attr = Prod_E();
 			attr = (AttributeNode*)malloc(sizeof(AttributeNode));
 			attr->type = TMP_PTR;
-			attr->next = NULL;
 			
 			code[pc].type = BIN;
 			code[pc].val.binInstr.x = attr;
@@ -601,7 +699,6 @@ static AttributeNode* Prod_FB()
 			AttributeNode *E_2_attr = Prod_E();
 			attr = (AttributeNode*)malloc(sizeof(AttributeNode));
 			attr->type = TMP_PTR;
-			attr->next = NULL;
 			
 			code[pc].type = BIN;
 			code[pc].val.binInstr.x = attr;
@@ -618,7 +715,7 @@ static AttributeNode* Prod_FB()
 			AttributeNode *E_2_attr = Prod_E();
 			attr = (AttributeNode*)malloc(sizeof(AttributeNode));
 			attr->type = TMP_PTR;
-			attr->next = NULL;
+			
 			
 			code[pc].type = BIN;
 			code[pc].val.binInstr.x = attr;
@@ -635,7 +732,7 @@ static AttributeNode* Prod_FB()
 			AttributeNode *E_2_attr = Prod_E();
 			attr = (AttributeNode*)malloc(sizeof(AttributeNode));
 			attr->type = TMP_PTR;
-			attr->next = NULL;
+			
 			
 			code[pc].type = BIN;
 			code[pc].val.binInstr.x = attr;
@@ -652,7 +749,6 @@ static AttributeNode* Prod_FB()
 			AttributeNode *E_2_attr = Prod_E();
 			attr = (AttributeNode*)malloc(sizeof(AttributeNode));
 			attr->type = TMP_PTR;
-			attr->next = NULL;
 			
 			code[pc].type = BIN;
 			code[pc].val.binInstr.x = attr;
@@ -694,7 +790,6 @@ static AttributeNode* Prod_E1(AttributeNode *pre_attr)
 		AttributeNode *TE_attr = Prod_TE();
 		AttributeNode *tmp = (AttributeNode*)malloc(sizeof(AttributeNode));
 		tmp->type = TMP_PTR;
-		tmp->next = NULL;
 
 		code[pc].type = BIN;
 		code[pc].val.binInstr.x = tmp;
@@ -712,7 +807,6 @@ static AttributeNode* Prod_E1(AttributeNode *pre_attr)
 		AttributeNode *TE_attr = Prod_TE();
 		AttributeNode *tmp = (AttributeNode*)malloc(sizeof(AttributeNode));
 		tmp->type = TMP_PTR;
-		tmp->next = NULL;
 
 		code[pc].type = BIN;
 		code[pc].val.binInstr.x = tmp;
@@ -749,7 +843,6 @@ static AttributeNode* Prod_TE1(AttributeNode *pre_attr)
 		AttributeNode *F_attr = Prod_F();
 		AttributeNode *tmp = (AttributeNode*)malloc(sizeof(AttributeNode));
 		tmp->type = TMP_PTR;
-		tmp->next = NULL;
 
 		code[pc].type = BIN;
 		code[pc].val.binInstr.x = tmp;
@@ -767,7 +860,6 @@ static AttributeNode* Prod_TE1(AttributeNode *pre_attr)
 		AttributeNode *F_attr = Prod_F();
 		AttributeNode *tmp = (AttributeNode*)malloc(sizeof(AttributeNode));
 		tmp->type = TMP_PTR;
-		tmp->next = NULL;
 
 		code[pc].type = BIN;
 		code[pc].val.binInstr.x = tmp;
@@ -797,7 +889,7 @@ static AttributeNode* Prod_F()
 		attr->type = IMM_VAL;
 		attr->val.imm.type = ID_INT;
 		attr->val.imm.val.intval = curtoken_num;
-		attr->next = NULL;
+		
 	}
 	else if (lookahead.token == SYN_ID)
 	{
@@ -807,7 +899,7 @@ static AttributeNode* Prod_F()
 		attr = (AttributeNode*)malloc(sizeof(AttributeNode));
 		attr->type = ID_PTR;
 		attr->val.id_ptr = p;
-		attr->next = NULL;
+		
 	}
 	else if (lookahead.token == SYN_PAREN_L)
 	{

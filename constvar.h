@@ -84,10 +84,6 @@ static int LexTable[6][8]=
 // data structure for attributes
 union AttributeVal
 {
-    int *true_label;     // true label pointer
-    int *false_label;    // false label pointer
-    int *begin_label;    // begin label pointer
-    int *next_label;     // next label pointer
     IDTABLE *id_ptr;    // id pointer
     EXPVAL *tmp_ptr;    // temporary variable pointer
     EXPVAL imm;         // immediate number value
@@ -99,7 +95,6 @@ typedef struct AttributeNode
 {
     enum AttributeType type;
     union AttributeVal val;
-    struct AttributeNode *next;
 }AttributeNode;
 
 //extern AttributeNode *lookupAttribute(AttributeNode *attribute, enum AttributeType type);
@@ -107,6 +102,7 @@ typedef struct AttributeNode
 
 // data structure for Instruction
 enum BinaryOperator{ADD, SUB, MUL, DIV, AND, OR, GT, GE, LT, LE, EQ, NE};
+
 typedef struct BinaryOperationInstruction
 {
     AttributeNode *x, *y, *z;
