@@ -428,22 +428,28 @@ static int Prod_S(int *S_next)
 		match(SYN_PAREN_R);
 
 		// emit conditional goto instruction
+		int *B_true = (int*)malloc(sizeof(int));
 		int *B_false = (int*)malloc(sizeof(int));
+		// generate true branch
 		code[pc].type = CGOTO;
 		code[pc].val.conGotoInstr.condition = B_attr;
-		code[pc].val.conGotoInstr.label = B_false;
+		code[pc].val.conGotoInstr.label = B_true;
 		pc++;
+		// generate false branch
+		code[pc].type = GOTO;
+		code[pc].val.gotoInstr.label = B_false;
+		pc++;
+		// backpatch B.true
+		*B_true = pc;
 
 		match(SYN_BRACE_L);
 		Prod_S(S_begin);
 		match(SYN_BRACE_R);
 
-		// emit unconditional goto instruction
 		code[pc].type = GOTO;
 		code[pc].val.gotoInstr.label = S_begin;
 		pc++;
 
-		// backpatch B.false
 		*B_false = pc;
 		Prod_S(S_next);
 	}
