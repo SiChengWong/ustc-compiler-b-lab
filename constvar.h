@@ -97,9 +97,6 @@ typedef struct AttributeNode
     union AttributeVal val;
 }AttributeNode;
 
-//extern AttributeNode *lookupAttribute(AttributeNode *attribute, enum AttributeType type);
-//extern AttributeNode *installAttribute(AttributeNode *attribute, AttributeNode *head);
-
 // data structure for Instruction
 enum BinaryOperator{ADD, SUB, MUL, DIV, AND, OR, GT, GE, LT, LE, EQ, NE};
 
