@@ -152,4 +152,34 @@ typedef struct Instruction
     union InstructionVal val;
 }Instr;
 
+#define MAX_CODE 1024
+extern Instr code[MAX_CODE];       // code stack
+extern int pc;                     // program counter
+
+// data structure for ASM code generation
+typedef struct AsmOperand
+{
+    int type;   // 0-register; 1-immediate number; -1-not used
+    int val;    // register number or immediate number value
+}AsmOperand;
+
+enum AsmInstructionType{ADDI, LW, LI};
+typedef struct AsmInstruction
+{
+    enum AsmInstructionType type;
+    AsmOperand operand1;
+    AsmOperand operand2;
+    AsmOperand operand3;
+}AsmInstr;
+
+extern AsmInstr asmCode[MAX_CODE];
+extern int asm_pc;
+
+typedef struct IdPosistion
+{
+    IDTABLE *id;
+    int offset;     // id offset from base pointer
+    struct IdPosistion *next;
+}IdPos;
+
 #endif
