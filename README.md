@@ -44,6 +44,6 @@ TinyC
 Windows系统中，通过命令行进入TinyC文件夹，运行编译命令生成可执行文件并运行。
 
 ```powershell
->> gcc constvar.h lexicalAnalysis.c syntaxAnalysis.c TinyC.c -o TinyC.exe
->> TinyC.exe
+gcc constvar.h lexicalAnalysis.c syntaxAnalysis.c TinyC.c -o TinyC.exe
+TinyC.exe
 ```
