@@ -13,6 +13,7 @@
 static char ReadAChar();
 static int FoundRELOOP();
 static int STR2INT();
+static char STR2CHAR();
 static int FoundKeyword();
 static int strcompare(char *sstr, char*tstr);
 
@@ -51,7 +52,7 @@ TERMINAL nextToken()
 			state=LexTable[state][LEX_DIGIT];
 		else if ((c>='a' && c<='z')||(c>='A' && c<='Z')||(c=='_'))
 			state=LexTable[state][LEX_LETTER_];
-		else if (c=='(' || c==')' || c=='{' || c=='}' || c==',' || c==';')
+		else if (c=='(' || c==')' || c=='{' || c=='}' || c==',' || c==';' || c=='\'')	// add '\'' to handle char type
 			state=LexTable[state][LEX_SYMBOL];
 		else
 		{	printf("Unknown symbol: %c\n",c);
@@ -100,6 +101,9 @@ TERMINAL nextToken()
 					  else if (tokenStr[0]=='}') token.token=SYN_BRACE_R;
 					  else if (tokenStr[0]==',') token.token=SYN_COMMA;
 					  else if (tokenStr[0]==';') token.token=SYN_SEMIC;
+					  else if (tokenStr[0]=='\'')
+					  	{token.token=SYN_CHAR;	token.tokenVal.character=STR2CHAR();}
+					  
 					  break;
 			default: break;
 		}
@@ -135,11 +139,11 @@ static int FoundRELOOP()
 	else if (tokenStr[0]=='>' && tokenStr[1]!='=') return(SYN_GT);
 	else if (tokenStr[0]=='>' && tokenStr[1]=='=') { prebuf=0; return(SYN_GE); }
 	else if (tokenStr[0]=='=' && tokenStr[1]!='=') return(SYN_SET);
-	else if (tokenStr[0]=='=' && tokenStr[1]=='=') return(SYN_EQ);
+	else if (tokenStr[0]=='=' && tokenStr[1]=='=') { prebuf=0; return(SYN_EQ); }
 	else if (tokenStr[0]=='!' && tokenStr[1]!='=') return(SYN_NOT);
-	else if (tokenStr[0]=='!' && tokenStr[1]=='=') return(SYN_NE);
-	else if (tokenStr[0]=='&' && tokenStr[1]=='&') return(SYN_AND);
-	else if (tokenStr[0]=='|' && tokenStr[1]=='|') return(SYN_OR);
+	else if (tokenStr[0]=='!' && tokenStr[1]=='=') { prebuf=0; return(SYN_NE); }
+	else if (tokenStr[0]=='&' && tokenStr[1]=='&') { prebuf=0; return(SYN_AND); }
+	else if (tokenStr[0]=='|' && tokenStr[1]=='|') { prebuf=0; return(SYN_OR); }
 	else return(ERR);
 }
 
@@ -149,6 +153,34 @@ static int STR2INT()
 	for (i=0;i<tokenLen;i++)
 		s=s*10+tokenStr[i]-'0';
 	return(s);
+}
+
+static char STR2CHAR()
+{
+	tokenLen=0;
+	while(!feof(sFile) && (tokenStr[tokenLen++]=ReadAChar(sFile))!='\'');
+	if(tokenLen==3 && tokenStr[0]=='\\'){
+		// escape character
+		switch (tokenStr[1])
+		{
+		case '0':	return '\0';
+		case 'b':	return '\b';
+		case 'n':	return '\n';
+		case 't':	return '\t';
+		case '\\':	return '\\';
+		case '\'':	return '\'';
+		case '\"':	return '\"';
+		}
+	}
+	else if (tokenLen == 2)
+	{
+		// normal character
+		return tokenStr[0];
+	}
+	else{
+		printf("Invalid char!\n");
+		return -1;
+	}
 }
 
 static int FoundKeyword()

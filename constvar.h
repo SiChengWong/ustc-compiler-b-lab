@@ -7,6 +7,7 @@
 
 typedef union {
 	int number;
+    char character;
 	char *str;
 } TOKENVAL;
 

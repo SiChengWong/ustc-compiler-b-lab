@@ -1,9 +1,9 @@
 main()
 {
   int i=0;
-  int j=1;
-  while(i<5){
-    show(i+j);
+  char c='a';
+  while(i<3){
+    show(c);
     i=i+1;
   }
 }

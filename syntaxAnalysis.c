@@ -9,6 +9,7 @@ static int strcompare(char *sstr, char *tstr);	//比较两个串
 static IDTABLE* InstallID();		//在符号表中为curtoken_str建立一个条目
 static IDTABLE* LookupID();			//在符号表中查找curtoken_str
 static int PrintCode();				// print IR code
+static int ExecuteCode();			// execute code in stack
 static void FreeExit();
 static int cast2int(EXPVAL exp);		//将exp的值转换为int类型
 static char cast2char(EXPVAL exp);		//将exp的值转换为char类型
@@ -32,6 +33,7 @@ static AttributeNode* Prod_F();
 extern FILE *sFile;
 static TERMINAL lookahead;
 static int curtoken_num;
+static char curtoken_char;
 static char curtoken_str[MAXTOKENLEN];
 static IDTABLE *IDTHead=NULL;
 
@@ -42,6 +44,25 @@ int pc = 0;                     // program counter
 static char *binOpSet[] = {"+", "-", "*", "/", "&&", "||", ">", ">=", "<", "<=", "==", "!="};
 static char *unaOpSet[] = {"-", "!"};
 
+// print operand
+static void printOperand(AttributeNode *attr){
+	switch (attr->type)
+	{
+	case ID_PTR:
+		printf("%s", attr->val.id_ptr->name);
+		return;
+	case TMP_PTR:
+		printf("%x", attr->val.tmp_ptr);
+		return;
+	case IMM_VAL:
+		if (attr->val.imm.type == ID_INT)
+			printf("%d", attr->val.imm.val.intval);
+		else
+			printf("\'%c\'", attr->val.imm.val.charval);
+		return;
+	}
+}
+
 // print program code
 int PrintCode(){
 	for (int i = 0; i < pc; i++)
@@ -51,136 +72,57 @@ int PrintCode(){
 		{
 		case BIN:
 			// print x
-			switch (code[i].val.binInstr.x->type)
-			{
-			case ID_PTR:
-				printf("%s\t=\t", code[i].val.binInstr.x->val.id_ptr->name);
-				break;
-			case TMP_PTR:
-				printf("&%x\t=\t", code[i].val.binInstr.x->val.tmp_ptr);
-				break;
-			}
+			printOperand(code[i].val.binInstr.x);
+			printf("\t=\t");
 			// print y
-			switch (code[i].val.binInstr.y->type)
-			{
-			case ID_PTR:
-				printf("%s\t", code[i].val.binInstr.y->val.id_ptr->name);
-				break;
-			case TMP_PTR:
-				printf("&%x\t", code[i].val.binInstr.y->val.tmp_ptr);
-				break;
-			case IMM_VAL:
-				printf("%d\t", code[i].val.binInstr.y->val.imm.val.intval);
-				break;
-			}
+			printOperand(code[i].val.binInstr.y);
+			printf("\t");
 			// print op
 			printf("%s\t", binOpSet[code[i].val.binInstr.op]);
 			// print z
-			switch (code[i].val.binInstr.z->type)
-			{
-			case ID_PTR:
-				printf("%s\n", code[i].val.binInstr.z->val.id_ptr->name);
-				break;
-			case TMP_PTR:
-				printf("&%x\n", code[i].val.binInstr.z->val.tmp_ptr);
-				break;
-			case IMM_VAL:
-				printf("%d\n", code[i].val.binInstr.z->val.imm.val.intval);
-				break;
-			}
+			printOperand(code[i].val.binInstr.z);
+			printf("\n");
 			break;
 		case UNA:
 			// print x
-			switch (code[i].val.unaInstr.x->type)
-			{
-			case ID_PTR:
-				printf("%s\t=\t", code[i].val.unaInstr.x->val.id_ptr->name);
-				break;
-			case TMP_PTR:
-				printf("&%x\t=\t", code[i].val.unaInstr.x->val.tmp_ptr);
-				break;
-			}
+			printOperand(code[i].val.unaInstr.x);
+			printf("\t=\t");
 			// print op
 			printf("%s\t", unaOpSet[code[i].val.unaInstr.op]);
 			// print y
-			switch (code[i].val.unaInstr.y->type)
-			{
-			case ID_PTR:
-				printf("%s\n", code[i].val.unaInstr.y->val.id_ptr->name);
-				break;
-			case TMP_PTR:
-				printf("&%x\n", code[i].val.unaInstr.y->val.tmp_ptr);
-				break;
-			case IMM_VAL:
-				printf("%d\n", code[i].val.unaInstr.y->val.imm.val.intval);
-				break;
-			}
+			printOperand(code[i].val.unaInstr.y);
+			printf("\n");
 			break;
 		case DUP:
 			// print x
-			switch (code[i].val.dupInstr.x->type)
-			{
-			case ID_PTR:
-				printf("%s\t=\t", code[i].val.dupInstr.x->val.id_ptr->name);
-				break;
-			case TMP_PTR:
-				printf("&%x\t=\t", code[i].val.dupInstr.x->val.tmp_ptr);
-				break;
-			}
+			printOperand(code[i].val.unaInstr.x);
+			printf("\t=\t");
 			// print y
-			switch (code[i].val.dupInstr.y->type)
-			{
-			case ID_PTR:
-				printf("%s\n", code[i].val.dupInstr.y->val.id_ptr->name);
-				break;
-			case TMP_PTR:
-				printf("&%x\n", code[i].val.dupInstr.y->val.tmp_ptr);
-				break;
-			case IMM_VAL:
-				printf("%d\n", code[i].val.dupInstr.y->val.imm.val.intval);
-				break;
-			}
+			printOperand(code[i].val.unaInstr.y);
+			printf("\n");
 			break;
 		case GOTO:
 			printf("goto\tL%d\n", *code[i].val.gotoInstr.label);
 			break;
 		case CGOTO:
 			// print condition
-			switch (code[i].val.conGotoInstr.condition->type)
-			{
-			case ID_PTR:
-				printf("if\t%s\t", code[i].val.conGotoInstr.condition->val.id_ptr->name);
-				break;
-			case TMP_PTR:
-				printf("if\t&%x\t", code[i].val.conGotoInstr.condition->val.tmp_ptr);
-				break;
-			case IMM_VAL:
-				printf("if\t%d\t", code[i].val.conGotoInstr.condition->val.imm.val.intval);
-				break;
-			}
+			printf("if\t");
+			printOperand(code[i].val.conGotoInstr.condition);
+			printf("\t");
 			// print goto dest
 			printf("goto\tL%d\n", *code[i].val.conGotoInstr.label);
 			break;
 		case PRINT:
-			switch (code[i].val.printInstr.expression->type)
-			{
-			case ID_PTR:
-				printf("SHOW\t%s\n", code[i].val.printInstr.expression->val.id_ptr->name);
-				break;
-			case TMP_PTR:
-				printf("SHOW\t&%x\n", code[i].val.printInstr.expression->val.tmp_ptr);
-				break;
-			case IMM_VAL:
-				printf("SHOW\t%d\n", code[i].val.printInstr.expression->val.imm.val.intval);
-				break;
-			}
+			printf("SHOW\t");
+			printOperand(code[i].val.printInstr.expression);
+			printf("\n");
 			break;
 		}
 	}
 	return 0;
 }
 
-int getAttributeVal(AttributeNode *attr){
+static int getAttributeVal(AttributeNode *attr){
 	switch (attr->type)
 	{
 	case ID_PTR:
@@ -192,7 +134,7 @@ int getAttributeVal(AttributeNode *attr){
 	}
 }
 
-int setAttributeVal(AttributeNode *dest, int val){
+static int setAttributeVal(AttributeNode *dest, int val){
 	switch (dest->type)
 	{
 	case ID_PTR:
@@ -367,6 +309,8 @@ static int match (int t)
 	if (lookahead.token == t)
 	{	if (t==SYN_NUM)
 			curtoken_num=lookahead.tokenVal.number;
+		else if (t==SYN_CHAR)	//新增对char型数据处理
+			curtoken_char=lookahead.tokenVal.character;
 		else if (t==SYN_ID)
 			for (p=lookahead.tokenVal.str,q=curtoken_str;(*q=*p)!='\0';p++,q++);
 		lookahead = nextToken( );
@@ -1055,8 +999,17 @@ static AttributeNode* Prod_F()
 		attr->type = IMM_VAL;
 		attr->val.imm.type = ID_INT;
 		attr->val.imm.val.intval = curtoken_num;
-		
 	}
+	else if (lookahead.token == SYN_CHAR)
+	{
+		// F-->char
+		match(SYN_CHAR);
+		attr = (AttributeNode*)malloc(sizeof(AttributeNode));
+		attr->type = IMM_VAL;
+		attr->val.imm.type = ID_CHAR;
+		attr->val.imm.val.intval = curtoken_char;
+	}
+	
 	else if (lookahead.token == SYN_ID)
 	{
 		// F-->id
