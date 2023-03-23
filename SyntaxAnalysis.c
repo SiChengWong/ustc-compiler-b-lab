@@ -180,8 +180,157 @@ int PrintCode(){
 	return 0;
 }
 
+int getAttributeVal(AttributeNode *attr){
+	switch (attr->type)
+	{
+	case ID_PTR:
+		return attr->val.id_ptr->val.intval;
+	case TMP_PTR:
+		return attr->val.tmp_ptr->val.intval;	
+	case IMM_VAL:
+		return attr->val.imm.val.intval;
+	}
+}
+
+int setAttributeVal(AttributeNode *dest, int val){
+	switch (dest->type)
+	{
+	case ID_PTR:
+		dest->val.id_ptr->val.intval = val;
+		return 0;
+	case TMP_PTR:
+		dest->val.tmp_ptr->val.intval = val;
+		return 0;
+	}
+}
+
 // execute program code
-int Execute(){
+int ExecuteCode(){
+	int i = 0;
+	while (i < pc)
+	{
+		switch (code[i].type)
+		{
+			case BIN:
+			{
+				int x_val, y_val, z_val;
+				// get y value
+				y_val = getAttributeVal(code[i].val.binInstr.y);
+				// get z value
+				z_val = getAttributeVal(code[i].val.binInstr.z);
+				// caculate x value
+				switch (code[i].val.binInstr.op)
+				{
+				case ADD:
+					x_val = y_val + z_val;
+					break;
+				case SUB:
+					x_val = y_val - z_val;
+					break;
+				case MUL:
+					x_val = y_val * z_val;
+					break;
+				case DIV:
+					x_val = y_val / z_val;
+					break;
+				case AND:
+					x_val = (y_val != 0 && z_val != 0) ? 1 : 0;
+					break;
+				case OR:
+					x_val = (y_val != 0 || z_val != 0) ? 1 : 0;
+					break;
+				case GT:
+					x_val = (y_val > z_val) ? 1 : 0;
+					break;
+				case GE:
+					x_val = (y_val >= z_val) ? 1 : 0;
+					break;
+				case LT:
+					x_val = (y_val < z_val) ? 1 : 0;
+					break;
+				case LE:
+					x_val = (y_val <= z_val) ? 1 : 0;
+					break;
+				case EQ:
+					x_val = (y_val == z_val) ? 1 : 0;
+					break;
+				case NE:
+					x_val = (y_val != z_val) ? 1 : 0;
+					break;
+				}
+				// assign x value
+				setAttributeVal(code[i].val.binInstr.x, x_val);
+				i++;
+				break;
+			}
+			case UNA:
+			{
+				int x_val, y_val;
+				// get y value
+				y_val = getAttributeVal(code[i].val.binInstr.y);
+				// caculate x value
+				switch (code[i].val.unaInstr.op)
+				{
+				case NEG:
+					x_val = -y_val;
+					break;
+				case NOT:
+					x_val = (y_val == 0) ? 1 : 0;
+					break;
+				}
+				// assign x value
+				setAttributeVal(code[i].val.binInstr.x, x_val);
+				i++;
+				break;
+			}
+			case DUP:
+			{
+				int y_val;
+				// get y value
+				y_val = getAttributeVal(code[i].val.binInstr.y);
+				// assign x value
+				setAttributeVal(code[i].val.binInstr.x, y_val);
+				i++;
+				break;
+			}
+			case GOTO:
+			{
+				i = *code[i].val.gotoInstr.label;
+				break;
+			}
+			case CGOTO:
+			{
+				// get condition value
+				int condition_val = getAttributeVal(code[i].val.conGotoInstr.condition);
+				// jump to target lable if condition is true
+				i = (condition_val != 0) ? *code[i].val.conGotoInstr.label : (i + 1);
+				break;
+			}
+			case PRINT:
+			{
+				switch (code[i].val.printInstr.expression->type)
+				{
+				case ID_PTR:
+					if (code[i].val.printInstr.expression->val.id_ptr->type == ID_CHAR)
+						printf("%c\n", code[i].val.printInstr.expression->val.id_ptr->val.charval);
+					else
+						printf("%d\n", code[i].val.printInstr.expression->val.id_ptr->val.intval);
+					break;
+				case TMP_PTR:
+					printf("%d\n", code[i].val.printInstr.expression->val.tmp_ptr->val.intval);
+					break;
+				case IMM_VAL:
+					if (code[i].val.printInstr.expression->val.imm.type == ID_CHAR)
+						printf("%c\n", code[i].val.printInstr.expression->val.imm.val.charval);
+					else
+						printf("%d\n", code[i].val.printInstr.expression->val.imm.val.intval);
+					break;
+				}
+				i++;
+				break;
+			}
+		}
+	}
 	return 0;
 }
 
@@ -206,6 +355,7 @@ void SyntaxAnalysis()
 	if (Prod_FUNC()==ERR)
 		printf("PROGRAM HALT!\n");
 	PrintCode();
+	ExecuteCode();
 	FreeExit();
 
 #endif

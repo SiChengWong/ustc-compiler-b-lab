@@ -1,9 +1,9 @@
 main()
-{ int i,j;
-  //test
-  /*this is a test*/
-  i=1; j=2;
-  while(i<j){
+{
+  int i=0;
+  int j=1;
+  while(i<5){
+    show(i+j);
     i=i+1;
   }
 }
