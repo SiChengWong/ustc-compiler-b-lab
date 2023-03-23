@@ -44,6 +44,20 @@ int pc = 0;                     // program counter
 static char *binOpSet[] = {"+", "-", "*", "/", "&&", "||", ">", ">=", "<", "<=", "==", "!="};
 static char *unaOpSet[] = {"-", "!"};
 
+static void printChar(char c){
+	switch (c)
+	{
+		case '\0':	printf("\\0"); 	break;
+		case '\b':	printf("\\b"); 	break;
+		case '\n':	printf("\\n"); 	break;
+		case '\t':	printf("\\t"); 	break;
+		case '\\':	printf("\\\\"); break;
+		case '\'':	printf("\\\'"); break;
+		case '\"':	printf("\\\""); break;
+		default:	printf("%c", c);break;
+	}
+}
+
 // print operand
 static void printOperand(AttributeNode *attr){
 	switch (attr->type)
@@ -57,9 +71,11 @@ static void printOperand(AttributeNode *attr){
 	case IMM_VAL:
 		if (attr->val.imm.type == ID_INT)
 			printf("%d", attr->val.imm.val.intval);
-		else
-			printf("\'%c\'", attr->val.imm.val.charval);
-		return;
+		else{
+			printf("\'");
+			printChar(attr->val.imm.val.charval);
+			printf("\'");
+		}
 	}
 }
 
@@ -254,18 +270,19 @@ int ExecuteCode(){
 				{
 				case ID_PTR:
 					if (code[i].val.printInstr.expression->val.id_ptr->type == ID_CHAR)
-						printf("%c\n", code[i].val.printInstr.expression->val.id_ptr->val.charval);
+						printf("%c", code[i].val.printInstr.expression->val.id_ptr->val.charval);
 					else
-						printf("%d\n", code[i].val.printInstr.expression->val.id_ptr->val.intval);
+						printf("%d", code[i].val.printInstr.expression->val.id_ptr->val.intval);
 					break;
 				case TMP_PTR:
-					printf("%d\n", code[i].val.printInstr.expression->val.tmp_ptr->val.intval);
+					printf("%d", code[i].val.printInstr.expression->val.tmp_ptr->val.intval);
 					break;
 				case IMM_VAL:
-					if (code[i].val.printInstr.expression->val.imm.type == ID_CHAR)
-						printf("%c\n", code[i].val.printInstr.expression->val.imm.val.charval);
-					else
-						printf("%d\n", code[i].val.printInstr.expression->val.imm.val.intval);
+					if (code[i].val.printInstr.expression->val.imm.type == ID_INT)
+						printf("%d", code[i].val.printInstr.expression->val.imm.val.intval);
+					else{
+						printChar(code[i].val.printInstr.expression->val.imm.val.charval);
+					}
 					break;
 				}
 				i++;

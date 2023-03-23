@@ -103,7 +103,7 @@ TERMINAL nextToken()
 					  else if (tokenStr[0]==';') token.token=SYN_SEMIC;
 					  else if (tokenStr[0]=='\'')
 					  	{token.token=SYN_CHAR;	token.tokenVal.character=STR2CHAR();}
-					  
+					  state=0;	tokenLen=0;
 					  break;
 			default: break;
 		}
@@ -157,26 +157,25 @@ static int STR2INT()
 
 static char STR2CHAR()
 {
-	tokenLen=0;
-	while(!feof(sFile) && (tokenStr[tokenLen++]=ReadAChar(sFile))!='\'');
-	if(tokenLen==3 && tokenStr[0]=='\\'){
+	char c;
+	c = ReadAChar(sFile);
+	if (c == '\\')
+	{
 		// escape character
-		switch (tokenStr[1])
+		c = ReadAChar(sFile);
+		switch (c)
 		{
-		case '0':	return '\0';
-		case 'b':	return '\b';
-		case 'n':	return '\n';
-		case 't':	return '\t';
-		case '\\':	return '\\';
-		case '\'':	return '\'';
-		case '\"':	return '\"';
+		case '0':	c = '0'; 	break;
+		case 'b':	c = '\b'; 	break;
+		case 'n':	c = '\n'; 	break;
+		case 't':	c = '\t'; 	break;
+		case '\\':	c = '\\'; 	break;
+		case '\'':	c = '\''; 	break;
+		case '\"':	c = '\"'; 	break;
 		}
 	}
-	else if (tokenLen == 2)
-	{
-		// normal character
-		return tokenStr[0];
-	}
+	if (ReadAChar(sFile) == '\'')
+		return c;
 	else{
 		printf("Invalid char!\n");
 		return -1;
