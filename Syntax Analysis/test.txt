@@ -1,0 +1,9 @@
+main()
+{
+  int i=0;
+  char c='\n';
+  while(i<3){
+    show(c);
+    i=i+1;
+  }
+}
