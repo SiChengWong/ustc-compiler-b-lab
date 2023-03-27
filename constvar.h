@@ -46,7 +46,7 @@ static int LexTable[6][8]=
 //用于词法分析输出，及语法分析
 enum SynType{
     ERR = -1, 
-    SYN_NUM, SYN_ID, 
+    SYN_IMM_INT, SYN_IMM_CHAR, SYN_ID, 
     SYN_LT, SYN_GT, SYN_LE, SYN_GE, SYN_EQ, SYN_NE, 
     SYN_ADD, SYN_SUB, SYN_MUL, SYN_DIV,
     SYN_PAREN_L, SYN_PAREN_R, SYN_BRACE_L, SYN_BRACE_R,

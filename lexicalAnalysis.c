@@ -71,7 +71,7 @@ TERMINAL nextToken()
 			case 103: if (tokenStr[0]=='+') token.token=SYN_ADD;
 					  else token.token=SYN_SUB;
 					  break;
-			case 104: token.token=SYN_NUM;
+			case 104: token.token=SYN_IMM_INT;
 					  token.tokenVal.number=STR2INT();
 					  break;
 			case 105: tokenStr[tokenLen]='\0';
@@ -102,7 +102,7 @@ TERMINAL nextToken()
 					  else if (tokenStr[0]==',') token.token=SYN_COMMA;
 					  else if (tokenStr[0]==';') token.token=SYN_SEMIC;
 					  else if (tokenStr[0]=='\'')
-					  	{token.token=SYN_CHAR;	token.tokenVal.character=STR2CHAR();}
+					  	{token.token=SYN_IMM_CHAR;	token.tokenVal.character=STR2CHAR();}
 					  state=0;	tokenLen=0;
 					  break;
 			default: break;

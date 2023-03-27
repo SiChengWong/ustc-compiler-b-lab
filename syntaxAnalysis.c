@@ -300,7 +300,7 @@ void SyntaxAnalysis()
 	TERMINAL token;
 	token=nextToken();
 	while (token.token!=ERR)
-	{	if (token.token==SYN_NUM)
+	{	if (token.token==SYN_IMM_INT)
 			printf("LEX: %d,%d\n",token.token,token.tokenVal.number);
 		else if (token.token==SYN_ID)
 			printf("LEX: %d,%s\n",token.token,token.tokenVal.str);
@@ -324,9 +324,9 @@ static int match (int t)
 {
 	char *p,*q;
 	if (lookahead.token == t)
-	{	if (t==SYN_NUM)
+	{	if (t==SYN_IMM_INT)
 			curtoken_num=lookahead.tokenVal.number;
-		else if (t==SYN_CHAR)	//新增对char型数据处理
+		else if (t==SYN_IMM_CHAR)	//新增对char型数据处理
 			curtoken_char=lookahead.tokenVal.character;
 		else if (t==SYN_ID)
 			for (p=lookahead.tokenVal.str,q=curtoken_str;(*q=*p)!='\0';p++,q++);
@@ -520,8 +520,8 @@ static int Prod_S(int *S_next)
 		else
 		{
 			// S-->if (B) {S} S
-			// backpatch B.false
-			*B_false = pc;
+			// backpatch S1.next, B.false
+			*S_1_next = *B_false = pc;
 		}
 		Prod_S(S_next);
 	}
@@ -717,7 +717,7 @@ static AttributeNode* Prod_TB1(AttributeNode *pre_attr)
 	if (lookahead.token == SYN_AND)
 	{
 		// TB1-->&& FB TB1
-		match(SYN_ADD);
+		match(SYN_AND);
 		AttributeNode *FB_attr = Prod_FB();
 		AttributeNode *tmp = (AttributeNode*)malloc(sizeof(AttributeNode));
 		tmp->val.tmp_ptr = (EXPVAL*)malloc(sizeof(EXPVAL));
@@ -775,7 +775,7 @@ static AttributeNode* Prod_FB()
 		attr->val.imm.type = ID_INT;
 		attr->val.imm.val.intval = 0;
 	}
-	else if (lookahead.token == SYN_ID || lookahead.token == SYN_NUM || lookahead.token == SYN_PAREN_L)
+	else if (lookahead.token == SYN_ID || lookahead.token == SYN_IMM_INT || lookahead.token == SYN_PAREN_L)
 	{
 		AttributeNode *E_attr = Prod_E();
 		if (lookahead.token == SYN_LT)
@@ -1008,19 +1008,19 @@ static AttributeNode* Prod_TE1(AttributeNode *pre_attr)
 static AttributeNode* Prod_F()
 {
 	AttributeNode *attr;
-	if (lookahead.token == SYN_NUM)
+	if (lookahead.token == SYN_IMM_INT)
 	{
 		// F-->num
-		match(SYN_NUM);
+		match(SYN_IMM_INT);
 		attr = (AttributeNode*)malloc(sizeof(AttributeNode));
 		attr->type = IMM_VAL;
 		attr->val.imm.type = ID_INT;
 		attr->val.imm.val.intval = curtoken_num;
 	}
-	else if (lookahead.token == SYN_CHAR)
+	else if (lookahead.token == SYN_IMM_CHAR)
 	{
 		// F-->char
-		match(SYN_CHAR);
+		match(SYN_IMM_CHAR);
 		attr = (AttributeNode*)malloc(sizeof(AttributeNode));
 		attr->type = IMM_VAL;
 		attr->val.imm.type = ID_CHAR;
